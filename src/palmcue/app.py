@@ -17,5 +17,11 @@ def main() -> None:
     app.setOrganizationName("PalmCue")
     path = Path(QStandardPaths.writableLocation(QStandardPaths.StandardLocation.AppConfigLocation))
     window = MainWindow(path / "preferences.json")
+    try:
+        from palmcue.windows import WindowsBackend
+
+        window.runtime.connect_desktop(WindowsBackend())
+    except OSError as error:
+        window.show_notice(str(error))
     window.show()
     sys.exit(app.exec())
