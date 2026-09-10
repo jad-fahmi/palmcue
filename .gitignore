@@ -216,3 +216,11 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# PalmCue local runtime and diagnostic state
+.palmcue/
+*.palmcue-report.json
+
+# Windows shell metadata
+Thumbs.db
+Desktop.ini
