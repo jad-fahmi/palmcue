@@ -22,6 +22,7 @@ class Frame:
     width: int
     height: int
     camera: int
+    landmarks: tuple[Point, ...] = ()
 
 
 def _latest(mailbox, value):
@@ -125,13 +126,15 @@ def _capture(mailbox, messages, stop, index: int, mirror: bool, scan: bool):
                 mediapipe.Image(image_format=mediapipe.ImageFormat.SRGB, data=rgb), stamp
             )
             hands = len(result.hand_landmarks)
+            landmarks = tuple(Point(p.x, p.y, p.z) for hand in result.hand_landmarks for p in hand)
             observation = None
             if hands == 1:
                 observation = classify(
                     [Point(p.x, p.y, p.z) for p in result.hand_landmarks[0]], width / height
                 )
             _latest(
-                mailbox, Frame(captured, observation, hands, rgb.tobytes(), width, height, index)
+                mailbox,
+                Frame(captured, observation, hands, rgb.tobytes(), width, height, index, landmarks),
             )
     except Exception as error:
         messages.put(

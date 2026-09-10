@@ -30,3 +30,8 @@ def test_untrusted_values():
     )
     assert settings == Settings()
     assert Settings.from_dict({"hold_seconds": 0}).hold_seconds == 0.6
+
+
+def test_debug_preview_is_opt_in():
+    assert not Settings().debug_preview
+    assert Settings.from_dict({"debug_preview": True}).debug_preview

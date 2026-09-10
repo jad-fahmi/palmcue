@@ -34,6 +34,8 @@ class Preview(QWidget):
         self.area = "center"
         self.message = "Your camera is off"
         self.detail = "Start when you're ready. Nothing is recorded."
+        self.debug = False
+        self.landmarks: tuple[Point, ...] = ()
         self.setAccessibleName("Camera preview and gesture activation area")
 
     def paintEvent(self, event):
@@ -61,6 +63,55 @@ class Preview(QWidget):
             p.setPen(QPen(QColor("#c7ec98"), 2, Qt.PenStyle.DashLine))
             p.setBrush(Qt.BrushStyle.NoBrush)
             p.drawRoundedRect(box, 12, 12)
+            if self.debug and self.landmarks:
+                links = (
+                    (0, 1),
+                    (1, 2),
+                    (2, 3),
+                    (3, 4),
+                    (0, 5),
+                    (5, 6),
+                    (6, 7),
+                    (7, 8),
+                    (5, 9),
+                    (9, 10),
+                    (10, 11),
+                    (11, 12),
+                    (9, 13),
+                    (13, 14),
+                    (14, 15),
+                    (15, 16),
+                    (13, 17),
+                    (17, 18),
+                    (18, 19),
+                    (19, 20),
+                    (0, 17),
+                )
+                p.setPen(QPen(QColor("#a8f0bf"), 2))
+                for offset in range(0, len(self.landmarks), 21):
+                    if offset + 20 >= len(self.landmarks):
+                        break
+                    for first, second in links:
+                        a, b = self.landmarks[offset + first], self.landmarks[offset + second]
+                        p.drawLine(
+                            QPointF(
+                                rect.left() + a.x * rect.width(), rect.top() + a.y * rect.height()
+                            ),
+                            QPointF(
+                                rect.left() + b.x * rect.width(), rect.top() + b.y * rect.height()
+                            ),
+                        )
+                p.setPen(Qt.PenStyle.NoPen)
+                p.setBrush(QColor("#f1bd62"))
+                for point in self.landmarks:
+                    p.drawEllipse(
+                        QPointF(
+                            rect.left() + point.x * rect.width(),
+                            rect.top() + point.y * rect.height(),
+                        ),
+                        4,
+                        4,
+                    )
         else:
             p.setPen(QColor("#eff5e8"))
             p.setFont(QFont("Segoe UI", 17, QFont.Weight.DemiBold))

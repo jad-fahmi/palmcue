@@ -31,6 +31,7 @@ class Runtime(QObject):
         window.lock_button.clicked.connect(self.lock)
         window.scan_button.clicked.connect(lambda: self.start_camera(scan=True))
         window.refresh_targets.setEnabled(False)
+        window.preview.debug = window.settings.debug_preview
 
     def connect_desktop(self, backend):
         from palmcue.ui.desktop import Desktop
@@ -67,6 +68,18 @@ class Runtime(QObject):
         self.window.stop_button.setEnabled(busy)
         self.window.targets.setEnabled(not busy)
         self.window.refresh_targets.setEnabled(not busy)
+        if not self.session or not self.fresh:
+            self.window.session_step.setText("Step 1 · Start camera in Practice")
+        elif self.session.pending:
+            self.window.session_step.setText("Step 3 · Bring your slideshow to the front")
+        elif self.session.active and self.controller.locked:
+            self.window.session_step.setText("Presenting · hold an open palm to unlock")
+        elif self.session.active:
+            self.window.session_step.setText("Presenting · hold two fingers for next slide")
+        elif self.window.targets.currentData() is None:
+            self.window.session_step.setText("Step 2 · Select your slideshow window")
+        else:
+            self.window.session_step.setText("Step 3 · Start presenting")
 
     def start_presenting(self):
         target = self.window.targets.currentData()
@@ -75,6 +88,7 @@ class Runtime(QObject):
         self.lock()
         self.session.start(target, time.monotonic())
         self.window.session_status.setText("Switch to your slides · starting in 5 seconds")
+        self.window.session_step.setText("Step 3 · Bring your slideshow to the front")
         self.update_present_controls()
         self.window.showMinimized()
 
@@ -204,10 +218,15 @@ class Runtime(QObject):
         self.fresh = True
         self.window.camera_button.setText("Stop camera")
         self.window.camera_badge.setText("CAMERA ON")
+        if self.session and not self.session.active and not self.session.pending:
+            self.window.session_status.setText("Camera ready · select your slideshow below")
         if self.window.isVisible() and self.window.stack.currentIndex() == 0:
             self.window.preview.image = QImage(
                 frame.rgb, frame.width, frame.height, frame.width * 3, QImage.Format.Format_RGB888
             ).copy()
+            self.window.preview.landmarks = (
+                frame.landmarks if self.window.settings.debug_preview else ()
+            )
             self.window.preview.update()
         if self.session and self.session.pending:
             self.lock()

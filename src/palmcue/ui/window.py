@@ -197,6 +197,8 @@ class MainWindow(QMainWindow):
         box.addWidget(self.present_button)
         self.session_status = label("Start the camera in Practice first.", "muted")
         box.addWidget(self.session_status)
+        self.session_step = label("Step 1 · Start camera in Practice", "badge")
+        box.addWidget(self.session_step)
         self.stop_button = QPushButton("Stop presenting")
         self.stop_button.setObjectName("danger")
         self.stop_button.setEnabled(False)
@@ -355,6 +357,19 @@ class MainWindow(QMainWindow):
         self.mirror = QCheckBox("Mirror the camera, like looking in a mirror")
         self.mirror.setChecked(self.settings.mirror)
         box.addWidget(self.mirror)
+        self.debug_preview_check = QCheckBox("Show tracking landmarks in the camera preview")
+        self.debug_preview_check.setChecked(self.settings.debug_preview)
+        self.debug_preview_check.setToolTip(
+            "Advanced troubleshooting view. It stays off during presentations."
+        )
+        box.addWidget(self.debug_preview_check)
+        box.addWidget(
+            label(
+                "Advanced: shows the 21 points PalmCue reads. This helps diagnose lighting or "
+                "hand position and does not change gesture decisions.",
+                "muted",
+            )
+        )
         layout.addWidget(frame)
         self.mode.currentIndexChanged.connect(
             lambda: self.update_setting(mode=self.mode.currentData())
@@ -364,6 +379,7 @@ class MainWindow(QMainWindow):
         )
         self.hold.valueChanged.connect(lambda v: self.update_setting(hold_seconds=v / 10))
         self.mirror.toggled.connect(lambda v: self.update_setting(mirror=v))
+        self.debug_preview_check.toggled.connect(lambda v: self.update_setting(debug_preview=v))
         self.cameras.currentIndexChanged.connect(
             lambda: self.update_setting(camera=self.cameras.currentData())
         )
@@ -379,6 +395,7 @@ class MainWindow(QMainWindow):
     def update_setting(self, **changes):
         self.settings = replace(self.settings, **changes)
         self.preview.area = self.settings.area
+        self.preview.debug = self.settings.debug_preview
         self.preview.update()
         self.refresh_preference_labels()
         if hasattr(self, "runtime"):
