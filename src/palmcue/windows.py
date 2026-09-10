@@ -56,6 +56,7 @@ class WindowsBackend:
         if sys.platform != "win32":
             raise OSError("Presentation control is currently available on Windows 10 and 11.")
         self.api = ctypes.WinDLL("user32", use_last_error=True)
+        self.kernel = ctypes.WinDLL("kernel32", use_last_error=True)
         self.api.GetForegroundWindow.restype = w.HWND
         self.api.GetWindowThreadProcessId.argtypes = [w.HWND, ctypes.POINTER(w.DWORD)]
         self.api.GetWindowTextLengthW.argtypes = [w.HWND]
@@ -67,16 +68,16 @@ class WindowsBackend:
         self.api.MonitorFromWindow.restype = w.HMONITOR
         self.api.GetMonitorInfoW.argtypes = [w.HMONITOR, ctypes.POINTER(MONITORINFO)]
         self.api.GetMonitorInfoW.restype = w.BOOL
-        self.api.OpenProcess.argtypes = [w.DWORD, w.BOOL, w.DWORD]
-        self.api.OpenProcess.restype = w.HANDLE
-        self.api.QueryFullProcessImageNameW.argtypes = [
+        self.kernel.OpenProcess.argtypes = [w.DWORD, w.BOOL, w.DWORD]
+        self.kernel.OpenProcess.restype = w.HANDLE
+        self.kernel.QueryFullProcessImageNameW.argtypes = [
             w.HANDLE,
             w.DWORD,
             w.LPWSTR,
             ctypes.POINTER(w.DWORD),
         ]
-        self.api.QueryFullProcessImageNameW.restype = w.BOOL
-        self.api.CloseHandle.argtypes = [w.HANDLE]
+        self.kernel.QueryFullProcessImageNameW.restype = w.BOOL
+        self.kernel.CloseHandle.argtypes = [w.HANDLE]
         self.api.ClientToScreen.argtypes = [w.HWND, ctypes.POINTER(w.POINT)]
         self.api.WindowFromPoint.argtypes = [w.POINT]
         self.api.WindowFromPoint.restype = w.HWND
@@ -114,16 +115,16 @@ class WindowsBackend:
 
     def _process_name(self, handle: int) -> str:
         pid = self.process(handle)
-        process = self.api.OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, False, pid)
+        process = self.kernel.OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, False, pid)
         if not process:
             return ""
         try:
             size = w.DWORD(1024)
             path = ctypes.create_unicode_buffer(size.value)
-            if self.api.QueryFullProcessImageNameW(process, 0, path, ctypes.byref(size)):
+            if self.kernel.QueryFullProcessImageNameW(process, 0, path, ctypes.byref(size)):
                 return os.path.basename(path.value).casefold()
         finally:
-            self.api.CloseHandle(process)
+            self.kernel.CloseHandle(process)
         return ""
 
     def fullscreen_presentation(self) -> Target | None:
