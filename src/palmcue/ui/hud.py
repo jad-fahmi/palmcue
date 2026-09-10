@@ -35,7 +35,7 @@ class PresentationHUD(QWidget):
         self.progress = QProgressBar()
         self.progress.setRange(0, 100)
         self.progress.setTextVisible(False)
-        self.footer = QLabel("Fist to pause · Ctrl + Alt + Space to stop")
+        self.footer = QLabel("Relax your hand between cues · Ctrl + Alt + Space to stop")
         self.footer.setObjectName("footer")
         for widget in (self.title, self.detail, self.progress, self.footer):
             layout.addWidget(widget)

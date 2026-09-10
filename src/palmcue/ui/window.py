@@ -247,8 +247,7 @@ class MainWindow(QMainWindow):
         box.addWidget(label("You're always in control", "subheading"))
         box.addWidget(
             label(
-                "Close your fist only when you want to pause gestures. "
-                "Hold an open palm to resume. "
+                "Relax or lower your hand briefly between commands. "
                 "Ctrl + Alt + Space stops "
                 "presenting from anywhere. Switching to another window pauses "
                 "PalmCue automatically."
@@ -289,14 +288,14 @@ class MainWindow(QMainWindow):
         entries = [
             (
                 "open",
-                "Resume after pausing",
-                "Hold an open palm only after you paused with a fist.",
+                "Reset for the next cue",
+                "Relaxed and open hands reset the last command.",
             ),
-            ("fist", "Pause", "Close your fist briefly when you want gestures to stop."),
+            ("fist", "No presentation action", "A fist is ignored while presenting."),
             (
                 "two",
                 "Next slide · Reliable",
-                "Hold up your index and middle fingers until the bar fills.",
+                "Briefly show your index and middle fingers.",
             ),
             (
                 "three",
@@ -364,7 +363,7 @@ class MainWindow(QMainWindow):
         self.hold_label = label("Hold time", "subheading")
         box.addWidget(self.hold_label)
         self.hold = QSlider(Qt.Orientation.Horizontal)
-        self.hold.setRange(6, 15)
+        self.hold.setRange(3, 9)
         self.hold.setValue(round(self.settings.hold_seconds * 10))
         self.hold.setAccessibleName("Hold time: faster to more deliberate")
         box.addWidget(self.hold)

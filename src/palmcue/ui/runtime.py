@@ -52,7 +52,7 @@ class Runtime(QObject):
         if not self.desktop.shortcut.registered:
             self.window.show_notice(
                 "Ctrl + Alt + Space is already used by another app. "
-                "Use the tray menu to stop presenting, or your fist to lock."
+                "Use the tray menu to stop presenting."
             )
 
     def refresh_targets(self):
@@ -84,7 +84,7 @@ class Runtime(QObject):
         elif self.session.pending:
             self.window.session_step.setText("Step 3 · Bring your slideshow to the front")
         elif self.session.active and self.controller.locked:
-            self.window.session_step.setText("Paused · hold an open palm to resume")
+            self.window.session_step.setText("Presentation ready · show your next gesture")
         elif self.session.active:
             self.window.session_step.setText("Presenting · hold two fingers for next slide")
         elif self.window.settings.auto_present or self.window.targets.currentData() is None:
