@@ -1,17 +1,21 @@
 """Desktop entry point. Importing the package never starts a camera."""
 
+import multiprocessing
 import sys
+from pathlib import Path
 
-from PySide6.QtWidgets import QApplication, QLabel, QMainWindow
+from PySide6.QtCore import QStandardPaths
+from PySide6.QtWidgets import QApplication
+
+from palmcue.ui.window import MainWindow
 
 
 def main() -> None:
+    multiprocessing.freeze_support()
     app = QApplication(sys.argv)
     app.setApplicationName("PalmCue")
     app.setOrganizationName("PalmCue")
-    window = QMainWindow()
-    window.setWindowTitle("PalmCue")
-    window.resize(960, 700)
-    window.setCentralWidget(QLabel("PalmCue\nYour presentation. At your fingertips."))
+    path = Path(QStandardPaths.writableLocation(QStandardPaths.StandardLocation.AppConfigLocation))
+    window = MainWindow(path / "preferences.json")
     window.show()
     sys.exit(app.exec())
