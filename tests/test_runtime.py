@@ -1,6 +1,8 @@
 import time
 
+from palmcue.actions import Dispatcher, Target
 from palmcue.camera import Frame
+from palmcue.session import Session
 from palmcue.ui.window import MainWindow
 
 
@@ -20,6 +22,42 @@ class FakeCamera:
         result = self.frame, self.messages
         self.frame, self.messages = None, []
         return result
+
+
+class AutoBackend:
+    def __init__(self):
+        self.target = Target(123, 42, "Canva presentation")
+        self.active = self.target.handle
+
+    def fullscreen_presentation(self):
+        return self.target
+
+    def foreground(self):
+        return self.active
+
+    def process(self, handle):
+        return 42
+
+    def modifiers_down(self):
+        return False
+
+    def key(self, code, control=False):
+        pass
+
+
+def test_automatic_mode_starts_guarded_countdown(qtbot, tmp_path):
+    window = MainWindow(tmp_path / "prefs.json", FakeCamera())
+    qtbot.addWidget(window)
+    runtime = window.runtime
+    backend = AutoBackend()
+    runtime.backend = backend
+    runtime.session = Session(Dispatcher(backend))
+    runtime.fresh = True
+    runtime.last_frame = time.monotonic()
+    runtime.auto_start_if_needed()
+    assert runtime.session.pending
+    assert runtime.controller.locked
+    assert "Fullscreen presentation detected" in window.session_status.text()
 
 
 def test_stale_frames_and_errors_lock_controls(qtbot, tmp_path):

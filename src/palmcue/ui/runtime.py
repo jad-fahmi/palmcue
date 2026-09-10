@@ -22,6 +22,8 @@ class Runtime(QObject):
         self.last_frame = 0.0
         self.fresh = False
         self.session = None
+        self.backend = None
+        self.auto_armed = True
         self.desktop = None
         self.timer = QTimer(self)
         self.timer.setInterval(30)
@@ -77,18 +79,31 @@ class Runtime(QObject):
         elif self.session.active:
             self.window.session_step.setText("Presenting · hold two fingers for next slide")
         elif self.window.targets.currentData() is None:
-            self.window.session_step.setText("Step 2 · Select your slideshow window")
+            self.window.session_step.setText(
+                "Automatic · open a supported fullscreen slideshow"
+                if self.window.settings.auto_present
+                else "Step 2 · Select your slideshow window"
+            )
         else:
             self.window.session_step.setText("Step 3 · Start presenting")
 
-    def start_presenting(self):
-        target = self.window.targets.currentData()
+    def start_presenting(self, target=None, automatic=False):
+        target = target or self.window.targets.currentData()
         if not self.session or not self.fresh or target is None:
             return
+        self.auto_armed = False
         self.lock()
         self.session.start(target, time.monotonic())
-        self.window.session_status.setText("Switch to your slides · starting in 5 seconds")
-        self.window.session_step.setText("Step 3 · Bring your slideshow to the front")
+        self.window.session_status.setText(
+            "Fullscreen presentation detected · starting in 5 seconds"
+            if automatic
+            else "Switch to your slides · starting in 5 seconds"
+        )
+        self.window.session_step.setText(
+            "Automatic · bring your slideshow to the front"
+            if automatic
+            else "Step 3 · Bring your slideshow to the front"
+        )
         self.update_present_controls()
         self.window.showMinimized()
 
@@ -102,6 +117,7 @@ class Runtime(QObject):
             self.desktop.overlay.hide()
             self.desktop.tray.setToolTip("PalmCue · presentation stopped")
             self.desktop.status("stopped")
+        self.auto_armed = False
 
     def toggle_camera(self):
         if self.running:
@@ -111,6 +127,7 @@ class Runtime(QObject):
 
     def start_camera(self, scan=False):
         self.stop_camera()
+        self.auto_armed = True
         self.window.show_notice("")
         self.running = True
         self.started = time.monotonic()
@@ -169,6 +186,7 @@ class Runtime(QObject):
     def poll(self):
         if self.session:
             now = time.monotonic()
+            self.auto_start_if_needed(now)
             message = self.session.tick(now, self.fresh and now - self.last_frame < 0.7)
             if message:
                 self.lock()
@@ -218,7 +236,12 @@ class Runtime(QObject):
         self.fresh = True
         self.window.camera_button.setText("Stop camera")
         self.window.camera_badge.setText("CAMERA ON")
-        if self.session and not self.session.active and not self.session.pending:
+        if (
+            self.session
+            and not self.session.active
+            and not self.session.pending
+            and not self.window.settings.auto_present
+        ):
             self.window.session_status.setText("Camera ready · select your slideshow below")
         if self.window.isVisible() and self.window.stack.currentIndex() == 0:
             self.window.preview.image = QImage(
@@ -250,6 +273,18 @@ class Runtime(QObject):
             f"Frame age: {round((now - frame.captured) * 1000)} ms · Hands: {frame.hands}\n"
             f"Pose: {pose} · Locked: {self.controller.locked}"
         )
+
+    def auto_start_if_needed(self, now=None):
+        """Start a guarded session when a supported app enters true fullscreen."""
+        if not self.session or not self.window.settings.auto_present or not self.fresh:
+            return
+        detector = getattr(self.backend, "fullscreen_presentation", None)
+        target = detector() if detector else None
+        if target is None:
+            self.auto_armed = True
+            return
+        if self.auto_armed and not self.session.active and not self.session.pending:
+            self.start_presenting(target, automatic=True)
 
     def handle_event(self, event):
         if self.session and self.session.active:

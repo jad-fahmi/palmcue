@@ -9,10 +9,12 @@ Windows 10 or 11, 64-bit. A built-in camera or USB webcam is all you need.
 2. Choose Start camera. PalmCue finds an available webcam automatically.
 3. In Practice, hold an open palm until the bar fills. Hold two fingers for
    next slide, or three for previous. Open your palm between commands.
-4. Open your real slides in slideshow mode. In PalmCue's Present page,
-   refresh the list and choose the slideshow window.
-5. Choose Start presenting, then bring your slides to the front within
-   five seconds. Hold an open palm to unlock. PalmCue stays minimized.
+4. Open your real slides. In PalmCue's Present page, automatic mode is on by
+   default: enter fullscreen presentation mode in Canva, your browser,
+   PowerPoint, or a PDF viewer and PalmCue will notice it.
+5. PalmCue shows a five-second countdown. Keep the slideshow in front, then
+   hold an open palm to unlock. PalmCue stays minimized. You can turn automatic
+   mode off and choose a window yourself if you prefer.
 
 Close your fist to lock. Ctrl + Alt + Space stops presenting from anywhere.
 You can also use PalmCue's icon in the system tray beside the clock.

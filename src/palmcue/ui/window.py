@@ -191,6 +191,22 @@ class MainWindow(QMainWindow):
                 "front. Hold an open palm to unlock when you're ready."
             )
         )
+        self.auto_present_check = QCheckBox(
+            "Automatically start when a supported fullscreen slideshow appears"
+        )
+        self.auto_present_check.setChecked(self.settings.auto_present)
+        self.auto_present_check.setToolTip(
+            "Works with Canva and browser slides, PowerPoint, and common PDF viewers. "
+            "PalmCue still waits five seconds and stays locked until you unlock it."
+        )
+        box.addWidget(self.auto_present_check)
+        box.addWidget(
+            label(
+                "Automatic mode only recognizes fullscreen presentation apps. "
+                "You can still choose a window yourself below.",
+                "muted",
+            )
+        )
         self.present_button = QPushButton("Start presenting")
         self.present_button.setObjectName("primary")
         self.present_button.setEnabled(False)
@@ -380,6 +396,7 @@ class MainWindow(QMainWindow):
         self.hold.valueChanged.connect(lambda v: self.update_setting(hold_seconds=v / 10))
         self.mirror.toggled.connect(lambda v: self.update_setting(mirror=v))
         self.debug_preview_check.toggled.connect(lambda v: self.update_setting(debug_preview=v))
+        self.auto_present_check.toggled.connect(lambda v: self.update_setting(auto_present=v))
         self.cameras.currentIndexChanged.connect(
             lambda: self.update_setting(camera=self.cameras.currentData())
         )

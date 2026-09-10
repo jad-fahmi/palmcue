@@ -8,6 +8,17 @@ from ctypes import wintypes as w
 from palmcue.actions import OutputBlocked, Target
 
 ULONG_PTR = ctypes.c_size_t
+MONITOR_DEFAULTTONEAREST = 2
+PROCESS_QUERY_LIMITED_INFORMATION = 0x1000
+
+
+class MONITORINFO(ctypes.Structure):
+    _fields_ = [
+        ("cbSize", w.DWORD),
+        ("rcMonitor", w.RECT),
+        ("rcWork", w.RECT),
+        ("dwFlags", w.DWORD),
+    ]
 
 
 class MOUSEINPUT(ctypes.Structure):
@@ -51,6 +62,21 @@ class WindowsBackend:
         self.api.GetWindowTextW.argtypes = [w.HWND, w.LPWSTR, ctypes.c_int]
         self.api.IsWindowVisible.argtypes = [w.HWND]
         self.api.GetClientRect.argtypes = [w.HWND, ctypes.POINTER(w.RECT)]
+        self.api.GetWindowRect.argtypes = [w.HWND, ctypes.POINTER(w.RECT)]
+        self.api.MonitorFromWindow.argtypes = [w.HWND, w.DWORD]
+        self.api.MonitorFromWindow.restype = w.HMONITOR
+        self.api.GetMonitorInfoW.argtypes = [w.HMONITOR, ctypes.POINTER(MONITORINFO)]
+        self.api.GetMonitorInfoW.restype = w.BOOL
+        self.api.OpenProcess.argtypes = [w.DWORD, w.BOOL, w.DWORD]
+        self.api.OpenProcess.restype = w.HANDLE
+        self.api.QueryFullProcessImageNameW.argtypes = [
+            w.HANDLE,
+            w.DWORD,
+            w.LPWSTR,
+            ctypes.POINTER(w.DWORD),
+        ]
+        self.api.QueryFullProcessImageNameW.restype = w.BOOL
+        self.api.CloseHandle.argtypes = [w.HANDLE]
         self.api.ClientToScreen.argtypes = [w.HWND, ctypes.POINTER(w.POINT)]
         self.api.WindowFromPoint.argtypes = [w.POINT]
         self.api.WindowFromPoint.restype = w.HWND
@@ -85,6 +111,63 @@ class WindowsBackend:
         self.api.EnumWindows.argtypes = [callback_type, w.LPARAM]
         self.api.EnumWindows(visit, 0)
         return sorted(targets, key=lambda t: t.title.casefold())
+
+    def _process_name(self, handle: int) -> str:
+        pid = self.process(handle)
+        process = self.api.OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, False, pid)
+        if not process:
+            return ""
+        try:
+            size = w.DWORD(1024)
+            path = ctypes.create_unicode_buffer(size.value)
+            if self.api.QueryFullProcessImageNameW(process, 0, path, ctypes.byref(size)):
+                return os.path.basename(path.value).casefold()
+        finally:
+            self.api.CloseHandle(process)
+        return ""
+
+    def fullscreen_presentation(self) -> Target | None:
+        """Return the foreground app only when it is a known presentation surface."""
+        handle = self.foreground()
+        if not handle or self.process(handle) == os.getpid():
+            return None
+        process_name = self._process_name(handle)
+        supported = {
+            "chrome.exe",
+            "msedge.exe",
+            "firefox.exe",
+            "brave.exe",
+            "opera.exe",
+            "powerpnt.exe",
+            "acrord32.exe",
+            "foxitreader.exe",
+            "sumatrapdf.exe",
+            "soffice.bin",
+            "libreoffice.exe",
+        }
+        if process_name not in supported:
+            return None
+        size = self.api.GetWindowTextLengthW(handle)
+        if not size:
+            return None
+        title = ctypes.create_unicode_buffer(size + 1)
+        self.api.GetWindowTextW(handle, title, size + 1)
+        rect, info = w.RECT(), MONITORINFO()
+        monitor = self.api.MonitorFromWindow(handle, MONITOR_DEFAULTTONEAREST)
+        info.cbSize = ctypes.sizeof(MONITORINFO)
+        if (
+            not monitor
+            or not self.api.GetWindowRect(handle, ctypes.byref(rect))
+            or not self.api.GetMonitorInfoW(monitor, ctypes.byref(info))
+        ):
+            return None
+        bounds = info.rcMonitor
+        if all(
+            abs(getattr(rect, edge) - getattr(bounds, edge)) <= 2
+            for edge in ("left", "top", "right", "bottom")
+        ):
+            return Target(handle, self.process(handle), title.value)
+        return None
 
     def modifiers_down(self) -> bool:
         return any(

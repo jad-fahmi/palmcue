@@ -35,3 +35,8 @@ def test_untrusted_values():
 def test_debug_preview_is_opt_in():
     assert not Settings().debug_preview
     assert Settings.from_dict({"debug_preview": True}).debug_preview
+
+
+def test_automatic_presentation_defaults_on_and_can_be_disabled():
+    assert Settings().auto_present
+    assert not Settings.from_dict({"auto_present": False}).auto_present

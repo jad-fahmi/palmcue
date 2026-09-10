@@ -20,6 +20,7 @@ class Settings:
     camera: int = -1
     onboarding_done: bool = False
     debug_preview: bool = False
+    auto_present: bool = True
 
     @classmethod
     def from_dict(cls, data: object) -> "Settings":
