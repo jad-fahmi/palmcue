@@ -1,3 +1,5 @@
+from pathlib import Path
+
 from PySide6.QtGui import QColor, QFont, QIcon, QPainter, QPen, QPixmap
 
 STYLE = """
@@ -47,7 +49,21 @@ QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical { height: 0; }
 """
 
 
-def app_icon(color="#21654f") -> QIcon:
+def app_icon(color=None) -> QIcon:
+    asset = Path(__file__).resolve().parents[1] / "assets/app-icon.png"
+    if asset.is_file():
+        icon = QIcon(str(asset))
+        if color is None:
+            return icon
+        pix = icon.pixmap(128, 128)
+        painter = QPainter(pix)
+        painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+        painter.setPen(QPen(QColor("#ffffff"), 5))
+        painter.setBrush(QColor(color))
+        painter.drawEllipse(88, 88, 32, 32)
+        painter.end()
+        return QIcon(pix)
+    color = color or "#21654f"
     pix = QPixmap(128, 128)
     pix.fill(QColor("transparent"))
     p = QPainter(pix)
