@@ -5,6 +5,7 @@ from dataclasses import dataclass
 from enum import StrEnum
 
 from palmcue.geometry import Observation, Point, Pose
+from palmcue.motion import Motion
 from palmcue.settings import Settings
 
 
@@ -49,6 +50,7 @@ class Controller:
         self._cooldown = 0.0
         self._pointer: Point | None = None
         self._point_time = -math.inf
+        self._motion = Motion()
 
     def lock(self) -> None:
         self.locked = True
@@ -63,6 +65,7 @@ class Controller:
         self._origin = None
         self._release_since = None
         self.progress = 0.0
+        self._motion.reset()
 
     def update(self, obs: Observation | None, now: float, hands: int = 1) -> list[Event]:
         if not math.isfinite(now) or (self._last_time is not None and now <= self._last_time):
@@ -95,6 +98,7 @@ class Controller:
             self.hint = "Move your hand inside the marked area"
             return []
         if obs.pose != self._pose or self._origin is None:
+            self._motion.reset()
             self._pose = obs.pose
             self._since = now
             self._origin = obs
@@ -161,6 +165,14 @@ class Controller:
             self.progress = min(1.0, held / self.settings.hold_seconds)
             if held >= self.settings.hold_seconds:
                 return self._fire(Action.NEXT if obs.pose == Pose.TWO else Action.PREVIOUS, now)
+        if self.settings.mode == "showcase":
+            self.hint = "Hold two fingers briefly, then swipe left or right"
+            result = self._motion.update(obs, now, self.settings.zoom)
+            if result in ("next", "previous"):
+                return self._fire(Action.NEXT if result == "next" else Action.PREVIOUS, now)
+            if result in ("zoom_in", "zoom_out"):
+                self.hint = "Zoom in" if result == "zoom_in" else "Zoom out"
+                return [Event(Action.ZOOM_IN if result == "zoom_in" else Action.ZOOM_OUT)]
         return []
 
     def _fire(self, action: Action, now: float) -> list[Event]:
