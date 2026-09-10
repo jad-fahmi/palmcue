@@ -82,3 +82,22 @@ def test_open_palm_is_an_obvious_release_gesture():
     assert feed(c, Pose.TWO, 2, 1) == [Action.NEXT]
     feed(c, Pose.OPEN, 3.05, 0.7)
     assert feed(c, Pose.TWO, 3.8, 1) == [Action.NEXT]
+
+
+def test_presentation_starts_ready_and_recovers_after_tracking_loss():
+    controller = Controller()
+    controller.begin_presentation()
+    assert not controller.locked
+    assert feed(controller, Pose.TWO, 0, 1) == [Action.NEXT]
+    controller.update(None, 2, 0)
+    assert controller.locked
+    controller.update(Observation(Pose.UNKNOWN, Point(0.5, 0.5), Point(0.5, 0.5)), 2.1)
+    assert not controller.locked
+
+
+def test_fist_intentionally_pauses_a_presentation():
+    controller = Controller()
+    controller.begin_presentation()
+    assert feed(controller, Pose.FIST, 0, 0.4) == [Action.LOCK]
+    assert controller.locked
+    assert not controller.presentation_mode

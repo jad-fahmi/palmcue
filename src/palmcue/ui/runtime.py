@@ -32,7 +32,7 @@ class Runtime(QObject):
         self.timer.timeout.connect(self.poll)
         self.timer.start()
         window.camera_button.clicked.connect(self.toggle_camera)
-        window.lock_button.clicked.connect(self.lock)
+        window.lock_button.clicked.connect(self.pause_gestures)
         window.scan_button.clicked.connect(lambda: self.start_camera(scan=True))
         window.refresh_targets.setEnabled(False)
         window.preview.debug = window.settings.debug_preview
@@ -84,7 +84,7 @@ class Runtime(QObject):
         elif self.session.pending:
             self.window.session_step.setText("Step 3 · Bring your slideshow to the front")
         elif self.session.active and self.controller.locked:
-            self.window.session_step.setText("Presenting · hold an open palm to unlock")
+            self.window.session_step.setText("Paused · hold an open palm to resume")
         elif self.session.active:
             self.window.session_step.setText("Presenting · hold two fingers for next slide")
         elif self.window.settings.auto_present or self.window.targets.currentData() is None:
@@ -125,6 +125,7 @@ class Runtime(QObject):
         was_busy = bool(self.session and (self.session.active or self.session.pending))
         if self.session:
             self.session.stop()
+            self.controller.end_presentation()
             self.lock()
             self.window.session_status.setText("Stopped · your slides are untouched")
             self.update_present_controls()
@@ -189,6 +190,10 @@ class Runtime(QObject):
         if self.desktop:
             self.desktop.overlay.hide()
 
+    def pause_gestures(self):
+        self.controller.presentation_mode = False
+        self.lock()
+
     def reconfigure(self, changes):
         if set(changes) <= {"presentation_feedback", "debug_preview", "onboarding_done"}:
             if self.desktop and not self.window.settings.presentation_feedback:
@@ -213,9 +218,13 @@ class Runtime(QObject):
         if self.session:
             now = time.monotonic()
             self.auto_start_if_needed(now)
+            was_active = self.session.active
             message = self.session.tick(now, self.fresh and now - self.last_frame < 0.7)
             if message:
-                self.lock()
+                if self.session.active and not was_active:
+                    self.controller.begin_presentation()
+                elif not self.session.active:
+                    self.controller.end_presentation()
                 self.window.session_status.setText(message)
                 if self.desktop and self.window.settings.presentation_feedback:
                     self.desktop.hud.reset()

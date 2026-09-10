@@ -81,7 +81,8 @@ def classify(points: list[Point], aspect: float = 4 / 3) -> Observation | None:
         pose = Pose.POINT
     elif all(extended[:2]) and all(folded[2:]) and not thumb_open:
         pose = Pose.TWO
-    elif all(extended[:3]) and folded[3] and not thumb_open:
+    # German-style three: thumb, index, and middle; ring and little fingers folded.
+    elif all(extended[:2]) and all(folded[2:]) and thumb_open:
         pose = Pose.THREE
     center = Point(
         sum(points[i].x for i in (0, 5, 9, 13, 17)) / 5,

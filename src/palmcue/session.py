@@ -31,7 +31,7 @@ class Session:
                     "Could not start. Check your camera and bring the selected slides to the front."
                 )
             self.active = True
-            return "Presenting · hold an open palm to unlock"
+            return "Presenting · controls are ready"
         if self.active and (not fresh or not self.dispatcher.check_target()):
             self.stop()
             return "Presentation paused · return to PalmCue and choose Start presenting again."

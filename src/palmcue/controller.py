@@ -51,6 +51,18 @@ class Controller:
         self._pointer: Point | None = None
         self._point_time = -math.inf
         self._motion = Motion()
+        self.presentation_mode = False
+
+    def begin_presentation(self) -> None:
+        """Presentation sessions are ready immediately; a fist can still pause them."""
+        self.lock()
+        self.presentation_mode = True
+        self.locked = False
+        self.hint = "Ready · show two fingers for next slide"
+
+    def end_presentation(self) -> None:
+        self.presentation_mode = False
+        self.lock()
 
     def lock(self) -> None:
         self.locked = True
@@ -88,6 +100,9 @@ class Controller:
             self.hint = "Show your whole hand in the camera"
             return []
         self._last_seen = now
+        if self.presentation_mode and self.locked:
+            self.locked = False
+            self.hint = "Ready · show two fingers for next slide"
         left, top, right, bottom = AREAS[self.settings.area]
         inside = left <= obs.center.x <= right and top <= obs.center.y <= bottom
         # Fist is always allowed to lock, even outside the activation area.
@@ -111,6 +126,7 @@ class Controller:
             self.hint = "Hold your fist to lock"
             self.progress = min(1.0, held / 0.3)
             if held >= 0.3 and not self.locked:
+                self.presentation_mode = False
                 self.lock()
                 return [Event(Action.LOCK)]
             return []
