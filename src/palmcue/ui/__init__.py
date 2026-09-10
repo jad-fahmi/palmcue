@@ -1,0 +1,1 @@
+"""PalmCue desktop interface."""
