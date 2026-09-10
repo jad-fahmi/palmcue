@@ -57,16 +57,21 @@ Additional dependencies may be added as development progresses.
 
 ## Installation
 
-PalmCue is currently under development.
+The Windows release includes an installer and a portable ZIP in `dist/`. Users do
+not need Python, a terminal, or a separate model download. The installer is per
+user and does not require administrator access. For source development, use the
+locked environment described in `docs/ENGINEERING.md`.
 
-Clone the repository:
+From source, clone the repository:
 
 ```bash
 git clone https://github.com/YOUR_USERNAME/palmcue.git
 cd palmcue
 ```
 
-Set up the Python environment and install the project dependencies once the initial release is available.
+Then run `uv sync` and launch `uv run palmcue`. This is only for development;
+normal users should launch PalmCue from the Start menu or the extracted portable
+folder.
 
 ## Usage
 
@@ -90,21 +95,12 @@ Showcase mode is optional.
 
 ## Status
 
-PalmCue is currently in active development.
-
-Planned initial functionality:
-
-* [ ] Webcam input
-* [ ] Hand landmark tracking
-* [ ] Gesture recognition
-* [ ] Slide navigation
-* [ ] Control lock
-* [ ] Pointer control
-* [ ] Five-finger zoom
-* [ ] Showcase gesture mode
-* [ ] Calibration
-* [ ] Configuration
-* [ ] Minimal desktop interface
+The first presentation-ready Windows build is implemented. It includes webcam
+tracking, conservative gesture recognition, guided practice, configuration,
+pointer, lock/unlock, guarded presentation input, optional Showcase gestures,
+recovery messaging, offline packaging, and a signed-model checksum. Hardware and
+individual presentation-app acceptance still need to be checked on the machine
+where it will be used; rehearse with the actual deck first.
 
 ## Demo
 
