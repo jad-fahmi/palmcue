@@ -48,3 +48,15 @@ def test_invalid_and_clipped_hands():
     assert classify(p) is None
     assert classify([Point(0.5, 0.5)] * 21) is None
     assert angle(Point(0, 0), Point(0, 0), Point(1, 1)) == 0
+
+
+def test_closed_fist_with_thumb_touching_index_is_not_a_click():
+    points = hand()
+    points[4] = points[8]
+    assert classify(points).pose == Pose.FIST
+
+
+def test_deliberate_pinch_above_knuckles():
+    points = hand((0,))
+    points[4] = Point(points[8].x + 0.015, points[8].y)
+    assert classify(points).pose == Pose.PINCH

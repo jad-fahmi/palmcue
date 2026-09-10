@@ -123,12 +123,12 @@ class Controller:
                 self.progress = min(1.0, held / 1.3)
                 if held >= 1.3:
                     self.locked = False
-                    self._latched = True
+                    self._latched = False
                     self._cooldown = now + 0.5
-                    self.hint = "Ready · relax your hand before a command"
+                    self.hint = "Ready for your first command"
                     return [Event(Action.UNLOCK)]
             return []
-        if obs.pose == Pose.UNKNOWN:
+        if obs.pose == Pose.UNKNOWN or (self._latched and obs.pose == Pose.OPEN):
             if self._release_since is None:
                 self._release_since = now
             if now - self._release_since >= 0.25:
@@ -138,7 +138,7 @@ class Controller:
             return []
         self._release_since = None
         if self._latched:
-            self.hint = "Relax your fingers briefly before the next command"
+            self.hint = "Open your palm briefly before the next command"
             return []
         if now < self._cooldown:
             return []

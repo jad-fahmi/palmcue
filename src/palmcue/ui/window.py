@@ -108,9 +108,8 @@ class MainWindow(QMainWindow):
         box.addWidget(label("Your first cue, in three small steps", "subheading"))
         box.addWidget(
             label(
-                "1  Start your camera.\n2  Hold an open palm until the bar fills, "
-                "then relax your fingers.\n3  Hold two fingers to move to the next "
-                "practice slide."
+                "1  Start your camera.\n2  Hold an open palm until the bar fills.\n"
+                "3  Hold two fingers for next. Open your palm between commands."
             )
         )
         done = QPushButton("Got it")
@@ -270,7 +269,7 @@ class MainWindow(QMainWindow):
         layout.addLayout(grid)
         layout.addWidget(
             label(
-                "Between slide commands, relax your fingers for a brief moment. "
+                "Between slide commands, open your palm for a brief moment. "
                 "Keeping a gesture held will never race through your slides.",
                 "muted",
             )

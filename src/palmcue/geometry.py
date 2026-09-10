@@ -66,7 +66,9 @@ def classify(points: list[Point], aspect: float = 4 / 3) -> Observation | None:
         extended.append(joint > 155 and reach > 1.15)
         folded.append(joint < 125 and reach < 1.1)
     thumb_open = angle(p[2], p[3], p[4]) > 145 and distance(p[4], p[5]) / scale > 0.65
-    pinch = distance(p[4], p[8]) / scale < 0.25
+    pinch = (
+        distance(p[4], p[8]) / scale < 0.25 and distance(p[8], p[0]) > distance(p[5], p[0]) * 1.15
+    )
     pose = Pose.UNKNOWN
     # Pinch is intentionally limited to folded other fingers to avoid open-palm clicks.
     if pinch and all(folded[1:]):

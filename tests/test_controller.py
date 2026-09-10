@@ -75,3 +75,10 @@ def test_time_reversal_fails_closed():
     c = ready()
     assert c.update(obs(Pose.TWO), 0) == []
     assert c.locked
+
+
+def test_open_palm_is_an_obvious_release_gesture():
+    c = ready()
+    assert feed(c, Pose.TWO, 2, 1) == [Action.NEXT]
+    feed(c, Pose.OPEN, 3.05, 0.7)
+    assert feed(c, Pose.TWO, 3.8, 1) == [Action.NEXT]
