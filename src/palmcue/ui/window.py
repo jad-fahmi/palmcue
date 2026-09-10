@@ -44,6 +44,9 @@ class MainWindow(QMainWindow):
         sidebar.setFixedWidth(190)
         side = QVBoxLayout(sidebar)
         side.setContentsMargins(18, 28, 18, 22)
+        brand_icon = label("")
+        brand_icon.setPixmap(app_icon().pixmap(64, 64))
+        side.addWidget(brand_icon)
         side.addWidget(label("PalmCue", "brand"))
         side.addWidget(label("PRESENT WITH PRESENCE", "tagline"))
         side.addSpacing(35)
@@ -198,6 +201,9 @@ class MainWindow(QMainWindow):
         self.feedback_check.setChecked(self.settings.presentation_feedback)
         self.feedback_check.toggled.connect(lambda v: self.update_setting(presentation_feedback=v))
         box.addWidget(self.feedback_check)
+        preview_feedback = QPushButton("Preview on-screen feedback")
+        preview_feedback.clicked.connect(self.preview_feedback)
+        box.addWidget(preview_feedback, alignment=Qt.AlignmentFlag.AlignLeft)
         box.addWidget(
             label(
                 "Visible on this screen and in full-screen sharing. "
@@ -256,6 +262,19 @@ class MainWindow(QMainWindow):
         )
         layout.addWidget(frame)
         layout.addStretch()
+
+    def preview_feedback(self):
+        from palmcue.ui.hud import PresentationHUD
+
+        if not hasattr(self, "feedback_preview"):
+            self.feedback_preview = PresentationHUD()
+        self.feedback_preview.place(self.frameGeometry().center())
+        self.feedback_preview.display(
+            "PalmCue · Locked",
+            "Hold an open palm to unlock · this is a preview",
+            0.6,
+            temporary=True,
+        )
 
     def build_guide(self):
         layout = self.page(
@@ -447,6 +466,8 @@ class MainWindow(QMainWindow):
         self.notice.setVisible(bool(message))
 
     def closeEvent(self, event):
+        if hasattr(self, "feedback_preview"):
+            self.feedback_preview.close()
         self.runtime.close()
         event.accept()
 

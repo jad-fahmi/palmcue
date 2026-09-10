@@ -25,6 +25,7 @@ class Runtime(QObject):
         self.backend = None
         self.auto_armed = True
         self.last_auto_check = 0.0
+        self.automatic_session = False
         self.desktop = None
         self.timer = QTimer(self)
         self.timer.setInterval(30)
@@ -100,6 +101,7 @@ class Runtime(QObject):
         if not self.session or not self.fresh or target is None:
             return
         self.auto_armed = False
+        self.automatic_session = automatic
         self.lock()
         self.session.start(target, time.monotonic())
         self.window.session_status.setText(
@@ -136,6 +138,7 @@ class Runtime(QObject):
             self.desktop.tray.setToolTip("PalmCue · presentation stopped")
             self.desktop.status("stopped")
         self.auto_armed = False
+        self.automatic_session = False
 
     def toggle_camera(self):
         if self.running:
@@ -147,6 +150,7 @@ class Runtime(QObject):
         self.stop_camera()
         self.auto_armed = True
         self.window.show_notice("")
+        self.window.session_status.setText("Connecting your camera…")
         self.running = True
         self.started = time.monotonic()
         self.window.camera_button.setText("Cancel camera setup")
@@ -264,6 +268,10 @@ class Runtime(QObject):
             return
         self.last_frame = frame.captured
         self.fresh = True
+        if self.window.session_status.text() in ("Connecting your camera…", "Your camera is off."):
+            self.window.session_status.setText(
+                "Camera connected · fullscreen slides will start a countdown"
+            )
         self.window.camera_button.setText("Stop camera")
         self.window.camera_badge.setText("CAMERA ON")
         if (
@@ -300,6 +308,16 @@ class Runtime(QObject):
                 )
             elif frame.hands > 1:
                 hint = "Show just one hand"
+            elif hint == "Move your hand inside the marked area":
+                hint = (
+                    "Move your hand toward the "
+                    + {
+                        "center": "center of the camera view",
+                        "wide": "center of the camera view",
+                        "left": "left side of the mirrored camera view",
+                        "right": "right side of the mirrored camera view",
+                    }[self.window.settings.area]
+                )
             self.desktop.hud.feedback(self.controller.locked, hint, self.controller.progress)
         if self.desktop:
             state = "locked" if self.controller.locked else "ready"
@@ -325,6 +343,18 @@ class Runtime(QObject):
         self.last_auto_check = now
         detector = getattr(self.backend, "fullscreen_presentation", None)
         target = detector() if detector else None
+        if self.automatic_session and (self.session.active or self.session.pending):
+            selected = self.session.pending or self.session.dispatcher.target
+            if target != selected:
+                self.stop_presenting()
+                message = (
+                    "Slides left fullscreen or lost focus. Return to fullscreen to start again."
+                )
+                self.window.session_status.setText(message)
+                if self.desktop and self.window.settings.presentation_feedback:
+                    self.desktop.hud.display("PalmCue · Paused", message, temporary=True)
+                self.auto_armed = target is None
+                return
         if target is None:
             self.auto_armed = True
             return

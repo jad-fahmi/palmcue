@@ -58,6 +58,13 @@ def test_automatic_mode_starts_guarded_countdown(qtbot, tmp_path):
     assert runtime.session.pending
     assert runtime.controller.locked
     assert "Fullscreen presentation detected" in window.session_status.text()
+    backend.target = None
+    runtime.last_auto_check = 0
+    runtime.auto_start_if_needed()
+    assert runtime.session.pending is None
+    assert not runtime.session.active
+    assert runtime.controller.locked
+    assert "left fullscreen" in window.session_status.text()
 
 
 def test_stale_frames_and_errors_lock_controls(qtbot, tmp_path):
