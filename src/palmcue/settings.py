@@ -11,7 +11,7 @@ from tempfile import NamedTemporaryFile
 @dataclass(frozen=True)
 class Settings:
     mode: str = "reliable"
-    hold_seconds: float = 0.85
+    hold_seconds: float = 0.45
     area: str = "center"
     pointer: bool = True
     click: bool = False
@@ -22,6 +22,7 @@ class Settings:
     debug_preview: bool = False
     auto_present: bool = True
     presentation_feedback: bool = True
+    gesture_revision: int = 2
 
     @classmethod
     def from_dict(cls, data: object) -> "Settings":
@@ -40,7 +41,9 @@ class Settings:
             result["mode"] = "reliable"
         if result["area"] not in ("center", "left", "right", "wide"):
             result["area"] = "center"
-        result["hold_seconds"] = min(1.5, max(0.6, result["hold_seconds"]))
+        if "gesture_revision" not in data:
+            result["hold_seconds"] = defaults["hold_seconds"]
+        result["hold_seconds"] = min(0.9, max(0.3, result["hold_seconds"]))
         result["camera"] = min(15, max(-1, result["camera"]))
         return cls(**result)
 

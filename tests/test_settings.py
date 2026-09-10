@@ -29,7 +29,12 @@ def test_untrusted_values():
         )
     )
     assert settings == Settings()
-    assert Settings.from_dict({"hold_seconds": 0}).hold_seconds == 0.6
+    assert Settings.from_dict({"hold_seconds": 0, "gesture_revision": 2}).hold_seconds == 0.3
+
+
+def test_existing_preferences_receive_the_faster_gesture_default():
+    settings = Settings.from_dict({"hold_seconds": 0.85})
+    assert settings.hold_seconds == 0.45
 
 
 def test_debug_preview_is_opt_in():

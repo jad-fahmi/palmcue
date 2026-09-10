@@ -54,7 +54,7 @@ class Controller:
         self.presentation_mode = False
 
     def begin_presentation(self) -> None:
-        """Presentation sessions are ready immediately; a fist can still pause them."""
+        """Presentation sessions are ready immediately and stay ready through ambiguity."""
         self.lock()
         self.presentation_mode = True
         self.locked = False
@@ -79,6 +79,14 @@ class Controller:
         self.progress = 0.0
         self._motion.reset()
 
+    def _release_latch(self, now: float) -> None:
+        if not self._latched:
+            return
+        if self._release_since is None:
+            self._release_since = now
+        elif now - self._release_since >= 0.2:
+            self._latched = False
+
     def update(self, obs: Observation | None, now: float, hands: int = 1) -> list[Event]:
         if not math.isfinite(now) or (self._last_time is not None and now <= self._last_time):
             self.lock()
@@ -86,18 +94,27 @@ class Controller:
         gap = self._last_time is not None and now - self._last_time > 0.35
         self._last_time = now
         if gap:
-            self.lock()
+            if self.presentation_mode:
+                self._reset_candidate()
+            else:
+                self.lock()
         if hands > 1:
-            self.lock()
+            if not self.presentation_mode:
+                self.lock()
             self.hint = "Use just one hand"
             return []
         if obs is None or hands != 1:
+            release_since = self._release_since
             self._reset_candidate()
+            self._release_since = release_since
+            self._release_latch(now)
             self._pointer = None
             self._point_time = -math.inf
-            if self._last_seen is None or now - self._last_seen > 0.7:
+            if not self.presentation_mode and (
+                self._last_seen is None or now - self._last_seen > 0.7
+            ):
                 self.lock()
-            self.hint = "Show your whole hand in the camera"
+            self.hint = "Relax or lower your hand, then show the next gesture"
             return []
         self._last_seen = now
         if self.presentation_mode and self.locked:
@@ -123,7 +140,12 @@ class Controller:
             obs.center.x - self._origin.center.x, obs.center.y - self._origin.center.y
         )
         if obs.pose == Pose.FIST:
-            self.hint = "Hold your fist to lock"
+            if self.presentation_mode:
+                self._release_latch(now)
+                self.hint = "Relax your hand, then show the next gesture"
+                self.progress = 0
+                return []
+            self.hint = "Hold your fist to pause"
             self.progress = min(1.0, held / 0.3)
             if held >= 0.3 and not self.locked:
                 self.presentation_mode = False
@@ -145,16 +167,13 @@ class Controller:
                     return [Event(Action.UNLOCK)]
             return []
         if obs.pose == Pose.UNKNOWN or (self._latched and obs.pose == Pose.OPEN):
-            if self._release_since is None:
-                self._release_since = now
-            if now - self._release_since >= 0.25:
-                self._latched = False
+            self._release_latch(now)
             self.hint = "Ready for your next gesture"
             self.progress = 0
             return []
         self._release_since = None
         if self._latched:
-            self.hint = "Open your palm briefly before the next command"
+            self.hint = "Relax or lower your hand before the next command"
             return []
         if now < self._cooldown:
             return []

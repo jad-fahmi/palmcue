@@ -39,9 +39,9 @@ def test_one_command_until_neutral_release():
 
 def test_no_accumulated_dwell_across_missing_frames():
     c = ready()
-    assert feed(c, Pose.TWO, 2, 0.6) == []
-    c.update(None, 2.65, 0)
-    assert feed(c, Pose.TWO, 2.7, 0.6) == []
+    assert feed(c, Pose.TWO, 2, 0.3) == []
+    c.update(None, 2.35, 0)
+    assert feed(c, Pose.TWO, 2.4, 0.3) == []
 
 
 def test_loss_stall_and_multiple_hands_lock():
@@ -67,8 +67,8 @@ def test_brief_and_moving_poses_do_not_fire():
     c = ready()
     assert feed(c, Pose.TWO, 2, 0.4) == []
     assert feed(c, Pose.THREE, 2.45, 0.4) == []
-    assert feed(c, Pose.TWO, 2.9, 0.5) == []
-    assert feed(c, Pose.TWO, 3.45, 0.5, x=0.6) == []
+    assert feed(c, Pose.TWO, 2.9, 0.3) == []
+    assert feed(c, Pose.TWO, 3.25, 0.3, x=0.6) == []
 
 
 def test_time_reversal_fails_closed():
@@ -90,14 +90,22 @@ def test_presentation_starts_ready_and_recovers_after_tracking_loss():
     assert not controller.locked
     assert feed(controller, Pose.TWO, 0, 1) == [Action.NEXT]
     controller.update(None, 2, 0)
-    assert controller.locked
+    assert not controller.locked
     controller.update(Observation(Pose.UNKNOWN, Point(0.5, 0.5), Point(0.5, 0.5)), 2.1)
     assert not controller.locked
 
 
-def test_fist_intentionally_pauses_a_presentation():
+def test_fist_is_ignored_during_a_presentation():
     controller = Controller()
     controller.begin_presentation()
-    assert feed(controller, Pose.FIST, 0, 0.4) == [Action.LOCK]
-    assert controller.locked
-    assert not controller.presentation_mode
+    assert feed(controller, Pose.FIST, 0, 0.4) == []
+    assert not controller.locked
+
+
+def test_lowering_hand_releases_command_without_open_palm():
+    controller = Controller()
+    controller.begin_presentation()
+    assert feed(controller, Pose.TWO, 2, 0.6) == [Action.NEXT]
+    for now in (2.65, 2.75, 2.9):
+        controller.update(None, now, 0)
+    assert feed(controller, Pose.TWO, 3.0, 0.6) == [Action.NEXT]
