@@ -11,13 +11,24 @@ ULONG_PTR = ctypes.c_size_t
 
 
 class MOUSEINPUT(ctypes.Structure):
-    _fields_ = [("dx", w.LONG), ("dy", w.LONG), ("mouseData", w.DWORD),
-                ("dwFlags", w.DWORD), ("time", w.DWORD), ("dwExtraInfo", ULONG_PTR)]
+    _fields_ = [
+        ("dx", w.LONG),
+        ("dy", w.LONG),
+        ("mouseData", w.DWORD),
+        ("dwFlags", w.DWORD),
+        ("time", w.DWORD),
+        ("dwExtraInfo", ULONG_PTR),
+    ]
 
 
 class KEYBDINPUT(ctypes.Structure):
-    _fields_ = [("wVk", w.WORD), ("wScan", w.WORD), ("dwFlags", w.DWORD),
-                ("time", w.DWORD), ("dwExtraInfo", ULONG_PTR)]
+    _fields_ = [
+        ("wVk", w.WORD),
+        ("wScan", w.WORD),
+        ("dwFlags", w.DWORD),
+        ("time", w.DWORD),
+        ("dwExtraInfo", ULONG_PTR),
+    ]
 
 
 class INPUTUNION(ctypes.Union):
@@ -76,17 +87,22 @@ class WindowsBackend:
         return sorted(targets, key=lambda t: t.title.casefold())
 
     def modifiers_down(self) -> bool:
-        return any(self.api.GetAsyncKeyState(key) & 0x8000 for key in (0x10, 0x11, 0x12, 0x5B, 0x5C))
+        return any(
+            self.api.GetAsyncKeyState(key) & 0x8000 for key in (0x10, 0x11, 0x12, 0x5B, 0x5C)
+        )
 
     def _send(self, entries: list[INPUT]) -> None:
         array = (INPUT * len(entries))(*entries)
         if self.api.SendInput(len(entries), array, ctypes.sizeof(INPUT)) != len(entries):
-            raise OutputBlocked("Windows blocked the controls. Run your presentation normally, "
-                                "without 'Run as administrator'.")
+            raise OutputBlocked(
+                "Windows blocked the controls. Run your presentation normally, "
+                "without 'Run as administrator'."
+            )
 
     def key(self, code: int, control: bool = False) -> None:
         def entry(key, up=False):
             return INPUT(type=1, ki=KEYBDINPUT(wVk=key, dwFlags=2 if up else 0))
+
         entries = [entry(code), entry(code, True)]
         if control:
             entries = [entry(0x11), *entries, entry(0x11, True)]
@@ -107,9 +123,18 @@ class WindowsBackend:
         py = origin.y + round(min(1, max(0, y)) * max(0, rect.bottom - 1))
         vx, vy = self.api.GetSystemMetrics(76), self.api.GetSystemMetrics(77)
         vw, vh = self.api.GetSystemMetrics(78), self.api.GetSystemMetrics(79)
-        self._send([INPUT(type=0, mi=MOUSEINPUT(
-            dx=round((px-vx) * 65535 / max(1, vw-1)),
-            dy=round((py-vy) * 65535 / max(1, vh-1)), dwFlags=0xC001))])
+        self._send(
+            [
+                INPUT(
+                    type=0,
+                    mi=MOUSEINPUT(
+                        dx=round((px - vx) * 65535 / max(1, vw - 1)),
+                        dy=round((py - vy) * 65535 / max(1, vh - 1)),
+                        dwFlags=0xC001,
+                    ),
+                )
+            ]
+        )
 
     def click(self, handle: int) -> None:
         point = w.POINT()
@@ -118,8 +143,9 @@ class WindowsBackend:
         if self.api.GetAncestor(under, 2) != handle:
             raise OutputBlocked("The pointer left the presentation. Start presenting again.")
         try:
-            self._send([INPUT(type=0, mi=MOUSEINPUT(dwFlags=2)),
-                        INPUT(type=0, mi=MOUSEINPUT(dwFlags=4))])
+            self._send(
+                [INPUT(type=0, mi=MOUSEINPUT(dwFlags=2)), INPUT(type=0, mi=MOUSEINPUT(dwFlags=4))]
+            )
         except OutputBlocked:
             self._send([INPUT(type=0, mi=MOUSEINPUT(dwFlags=4))])
             raise

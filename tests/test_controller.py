@@ -45,8 +45,11 @@ def test_no_accumulated_dwell_across_missing_frames():
 
 
 def test_loss_stall_and_multiple_hands_lock():
-    for timestamp, observation, hands in [(3, None, 0), (3, obs(Pose.TWO), 1),
-                                            (2, obs(Pose.TWO), 2)]:
+    for timestamp, observation, hands in [
+        (3, None, 0),
+        (3, obs(Pose.TWO), 1),
+        (2, obs(Pose.TWO), 2),
+    ]:
         c = ready()
         assert c.update(observation, timestamp, hands) == []
         assert c.locked

@@ -36,8 +36,11 @@ class Dispatcher:
 
     def check_target(self) -> bool:
         t = self.target
-        return bool(t and self.backend.foreground() == t.handle
-                    and self.backend.process(t.handle) == t.process)
+        return bool(
+            t
+            and self.backend.foreground() == t.handle
+            and self.backend.process(t.handle) == t.process
+        )
 
     def dispatch(self, event: Event) -> None:
         if event.action in (Action.LOCK, Action.UNLOCK):

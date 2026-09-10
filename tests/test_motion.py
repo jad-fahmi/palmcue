@@ -1,9 +1,10 @@
 from dataclasses import replace
 
+from test_controller import feed, obs, ready
+
 from palmcue.controller import Action
 from palmcue.geometry import Pose
 from palmcue.motion import Motion
-from test_controller import feed, obs, ready
 
 
 def test_swipe_requires_preparation_and_release():

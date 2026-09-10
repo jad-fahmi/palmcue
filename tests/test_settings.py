@@ -22,9 +22,11 @@ def test_missing_and_corrupt(tmp_path):
 
 
 def test_untrusted_values():
-    settings = Settings.from_dict(json.loads(
-        '{"hold_seconds": NaN, "camera": true, "click": "yes", '
-        '"mode": "broken", "area": "anywhere", "extra": 1}'
-    ))
+    settings = Settings.from_dict(
+        json.loads(
+            '{"hold_seconds": NaN, "camera": true, "click": "yes", '
+            '"mode": "broken", "area": "anywhere", "extra": 1}'
+        )
+    )
     assert settings == Settings()
     assert Settings.from_dict({"hold_seconds": 0}).hold_seconds == 0.6

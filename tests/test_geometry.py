@@ -19,17 +19,23 @@ def hand(extended=(), thumb=False):
     return p
 
 
-@pytest.mark.parametrize("fingers,thumb,pose", [
-    ((), False, Pose.FIST), ((0,), False, Pose.POINT),
-    ((0, 1), False, Pose.TWO), ((0, 1, 2), False, Pose.THREE),
-    ((0, 1, 2, 3), True, Pose.OPEN), ((1, 3), False, Pose.UNKNOWN),
-])
+@pytest.mark.parametrize(
+    "fingers,thumb,pose",
+    [
+        ((), False, Pose.FIST),
+        ((0,), False, Pose.POINT),
+        ((0, 1), False, Pose.TWO),
+        ((0, 1, 2), False, Pose.THREE),
+        ((0, 1, 2, 3), True, Pose.OPEN),
+        ((1, 3), False, Pose.UNKNOWN),
+    ],
+)
 def test_poses_and_mirrors(fingers, thumb, pose):
     points = hand(fingers, thumb)
     assert classify(points).pose == pose
-    assert classify([Point(1-p.x, p.y, p.z) for p in points]).pose == pose
+    assert classify([Point(1 - p.x, p.y, p.z) for p in points]).pose == pose
     # In-plane rotation must not change the pose.
-    rotated = [Point(0.5 + (p.y-0.5)/ (4/3), 0.5 - (p.x-0.5)*(4/3)) for p in points]
+    rotated = [Point(0.5 + (p.y - 0.5) / (4 / 3), 0.5 - (p.x - 0.5) * (4 / 3)) for p in points]
     assert classify(rotated).pose == pose
 
 

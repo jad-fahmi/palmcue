@@ -56,8 +56,9 @@ def save_settings(path: Path, settings: Settings) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     temp = None
     try:
-        with NamedTemporaryFile(mode="w", encoding="utf-8", dir=path.parent,
-                                suffix=".tmp", delete=False) as stream:
+        with NamedTemporaryFile(
+            mode="w", encoding="utf-8", dir=path.parent, suffix=".tmp", delete=False
+        ) as stream:
             temp = Path(stream.name)
             json.dump(asdict(settings), stream, indent=2)
             stream.flush()

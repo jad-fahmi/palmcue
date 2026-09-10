@@ -35,8 +35,8 @@ AREAS = {
 
 
 class Controller:
-    def __init__(self, settings: Settings = Settings()):
-        self.settings = settings
+    def __init__(self, settings: Settings | None = None):
+        self.settings = settings or Settings()
         self.locked = True
         self.progress = 0.0
         self.hint = "Hold an open palm to unlock"
@@ -104,8 +104,9 @@ class Controller:
             self._origin = obs
             self.progress = 0.0
         held = now - self._since
-        motion = math.hypot(obs.center.x - self._origin.center.x,
-                            obs.center.y - self._origin.center.y)
+        motion = math.hypot(
+            obs.center.x - self._origin.center.x, obs.center.y - self._origin.center.y
+        )
         if obs.pose == Pose.FIST:
             self.hint = "Hold your fist to lock"
             self.progress = min(1.0, held / 0.3)
@@ -148,8 +149,9 @@ class Controller:
             x = min(1.0, max(0.0, (obs.pointer.x - left) / (right - left)))
             y = min(1.0, max(0.0, (obs.pointer.y - top) / (bottom - top)))
             previous = self._pointer or Point(x, y)
-            self._pointer = Point(previous.x + 0.28 * (x - previous.x),
-                                  previous.y + 0.28 * (y - previous.y))
+            self._pointer = Point(
+                previous.x + 0.28 * (x - previous.x), previous.y + 0.28 * (y - previous.y)
+            )
             self._point_time = now
             return [Event(Action.POINTER, self._pointer)]
         if obs.pose == Pose.PINCH and self.settings.click and self.settings.pointer:
@@ -158,7 +160,9 @@ class Controller:
                 return self._fire(Action.CLICK, now)
             return []
         if self.settings.mode == "reliable" and obs.pose in (Pose.TWO, Pose.THREE):
-            self.hint = "Hold still for " + ("next slide" if obs.pose == Pose.TWO else "previous slide")
+            self.hint = "Hold still for " + (
+                "next slide" if obs.pose == Pose.TWO else "previous slide"
+            )
             if motion > 0.045:
                 self._since, self._origin = now, obs
                 held = 0

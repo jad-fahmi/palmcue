@@ -4,8 +4,10 @@ import hashlib
 from pathlib import Path
 from urllib.request import urlopen
 
-URL = ("https://storage.googleapis.com/mediapipe-models/hand_landmarker/"
-       "hand_landmarker/float16/1/hand_landmarker.task")
+URL = (
+    "https://storage.googleapis.com/mediapipe-models/hand_landmarker/"
+    "hand_landmarker/float16/1/hand_landmarker.task"
+)
 DEST = Path(__file__).resolve().parents[1] / "src/palmcue/assets/hand_landmarker.task"
 SHA256 = "fbc2a30080c3c557093b5ddfc334698132eb341044ccee322ccf8bcf3607cde1"
 
