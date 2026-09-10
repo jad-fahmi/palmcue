@@ -8,13 +8,14 @@ Windows 10 or 11, 64-bit. A built-in camera or USB webcam is all you need.
    Keep the _internal folder beside the application.
 2. Choose Start camera on Camera & practice or Present. PalmCue finds an
    available webcam automatically.
-3. In Practice, hold an open palm until the bar fills. Hold two fingers for
-   next slide, or three for previous. Open your palm between commands.
+3. In Practice, hold an open palm once to begin. Hold two fingers for next
+   slide. For previous, use the German three: thumb, index, and middle finger.
+   Open your hand briefly between commands.
 4. Open your real slides. In PalmCue's Present page, automatic mode is on by
    default: enter fullscreen presentation mode in Canva, your browser,
    PowerPoint, or a PDF viewer and PalmCue will notice it.
-5. A small panel over your slides shows a five-second countdown. Keep the slideshow in front, then
-   hold an open palm to unlock. PalmCue stays minimized. You can turn automatic
+5. A small panel over your slides shows a five-second countdown. Keep the slideshow in front.
+   Gestures are ready when the countdown ends. PalmCue stays minimized. You can turn automatic
    mode off and choose a window yourself if you prefer.
 
 One screen is enough. The feedback panel shows whether controls are locked,
@@ -24,7 +25,8 @@ Present before rehearsing. It is visible to anyone viewing your screen; switch
 off "Show feedback over my slides" when you want a clean audience view.
 Automatic sessions stop when you leave fullscreen or switch windows.
 
-Close your fist to lock. Ctrl + Alt + Space stops presenting from anywhere.
+Close your fist to pause gestures; hold an open palm to resume. Ctrl + Alt + Space
+stops presenting from anywhere.
 You can also use PalmCue's icon in the system tray beside the clock.
 Switching windows pauses presentation control. Return to PalmCue to start again.
 Closing PalmCue quits and releases your camera.

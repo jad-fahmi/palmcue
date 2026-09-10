@@ -12,7 +12,7 @@ The pipeline is deliberately separated:
 4. An action adapter sends short keyboard/mouse events to the selected window.
 5. Qt owns settings, onboarding, practice, feedback and lifecycle.
 
-Safety defaults: start locked, one clearly visible hand, deliberate unlock,
+Safety defaults: practice starts paused; presentations start ready, one clearly visible hand,
 one event per held gesture, tracking loss relocks, practice never sends input.
 No recording, network service, telemetry or custom trained classifier.
 

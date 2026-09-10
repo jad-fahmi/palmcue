@@ -10,7 +10,7 @@ It is built in Python and designed to work with existing presentation software r
 * Slide navigation with hand gestures
 * Virtual presentation pointer
 * Gesture-based zoom
-* Lock/unlock controls to prevent accidental input
+* Optional fist-to-pause control to prevent accidental input
 * Configurable gesture activation area
 * Reliable and Showcase gesture modes
 * Designed to work without keeping a webcam preview on screen
@@ -26,7 +26,7 @@ PalmCue includes an optional Showcase mode for more expressive presentation cont
 | Five-finger contraction     | Zoom out              |
 | Index finger                | Pointer               |
 | Pinch                       | Click                 |
-| Closed fist                 | Lock controls         |
+| Closed fist                 | Pause controls        |
 
 Showcase mode can be disabled in favor of more conservative gestures when reliability is the priority.
 
@@ -97,7 +97,7 @@ Showcase mode is optional.
 
 The first presentation-ready Windows build is implemented. It includes webcam
 tracking, conservative gesture recognition, guided practice, configuration,
-pointer, lock/unlock, guarded presentation input, optional Showcase gestures,
+pointer, pause/resume, guarded presentation input, optional Showcase gestures,
 recovery messaging, offline packaging, and a signed-model checksum. Hardware and
 individual presentation-app acceptance still need to be checked on the machine
 where it will be used; rehearse with the actual deck first.

@@ -113,8 +113,8 @@ class MainWindow(QMainWindow):
         box.addWidget(label("Your first cue, in three small steps", "subheading"))
         box.addWidget(
             label(
-                "1  Start your camera.\n2  Hold an open palm until the bar fills.\n"
-                "3  Hold two fingers for next. Open your palm between commands."
+                "1  Start your camera.\n2  Hold two fingers for next.\n"
+                "3  Open your hand briefly between commands."
             )
         )
         done = QPushButton("Got it")
@@ -143,7 +143,7 @@ class MainWindow(QMainWindow):
         practice_layout.addWidget(label("Try it here", "subheading"))
         self.deck = PracticeDeck()
         practice_layout.addWidget(self.deck, 1)
-        self.gesture_status = label("Hold an open palm to unlock", "subheading")
+        self.gesture_status = label("Practice starts paused · hold an open palm", "subheading")
         practice_layout.addWidget(self.gesture_status)
         self.progress = QProgressBar()
         self.progress.setRange(0, 100)
@@ -152,7 +152,7 @@ class MainWindow(QMainWindow):
         practice_layout.addWidget(self.progress)
         self.last_action = label("Waiting for your first cue", "muted")
         practice_layout.addWidget(self.last_action)
-        self.lock_button = QPushButton("Lock controls")
+        self.lock_button = QPushButton("Pause gestures")
         practice_layout.addWidget(self.lock_button)
         row.addWidget(practice_card, 5)
         layout.addLayout(row)
@@ -180,7 +180,7 @@ class MainWindow(QMainWindow):
             "A small panel over your slides shows the countdown, hand feedback, and commands.",
         )
         frame, box = card()
-        box.addWidget(label("1. Camera on   2. Slides fullscreen   3. Open palm", "subheading"))
+        box.addWidget(label("1. Camera on   2. Slides fullscreen   3. Present", "subheading"))
         self.present_camera_button = QPushButton("Start camera")
         self.present_camera_button.setObjectName("primary")
         self.present_camera_button.clicked.connect(lambda: self.runtime.toggle_camera())
@@ -191,7 +191,7 @@ class MainWindow(QMainWindow):
         box.addWidget(
             label(
                 "In Canva, choose Present and enter fullscreen. Keep your slides in front "
-                "during the countdown, then hold an open palm to unlock. "
+                "during the countdown. Gestures are ready when it finishes. "
                 "Fullscreen detection also works with supported browsers, "
                 "PowerPoint and PDF viewers.",
                 "muted",
@@ -235,7 +235,7 @@ class MainWindow(QMainWindow):
         box.addWidget(
             label(
                 "After Start, you have five seconds to bring that window to the "
-                "front. Hold an open palm to unlock when you're ready."
+                "front. Gestures become ready when the countdown finishes."
             )
         )
         self.present_button = QPushButton("Start presenting")
@@ -247,7 +247,9 @@ class MainWindow(QMainWindow):
         box.addWidget(label("You're always in control", "subheading"))
         box.addWidget(
             label(
-                "Close your fist to lock gestures. Ctrl + Alt + Space stops "
+                "Close your fist only when you want to pause gestures. "
+                "Hold an open palm to resume. "
+                "Ctrl + Alt + Space stops "
                 "presenting from anywhere. Switching to another window pauses "
                 "PalmCue automatically."
             )
@@ -285,14 +287,22 @@ class MainWindow(QMainWindow):
         )
         grid = QGridLayout()
         entries = [
-            ("open", "Unlock", "Hold an open palm still for a moment, then relax your fingers."),
-            ("fist", "Lock", "Close your fist briefly. Works anywhere in the camera view."),
+            (
+                "open",
+                "Resume after pausing",
+                "Hold an open palm only after you paused with a fist.",
+            ),
+            ("fist", "Pause", "Close your fist briefly when you want gestures to stop."),
             (
                 "two",
                 "Next slide · Reliable",
                 "Hold up your index and middle fingers until the bar fills.",
             ),
-            ("three", "Previous slide · Reliable", "Hold up your index, middle and ring fingers."),
+            (
+                "three",
+                "Previous slide · Reliable",
+                "Use the German three: thumb, index and middle finger.",
+            ),
             ("point", "Pointer", "Raise just your index finger and move it gently."),
             (
                 "pinch",
@@ -481,8 +491,8 @@ class MainWindow(QMainWindow):
             (
                 "If your hand isn't responding",
                 "Face a light, avoid a bright window behind you, "
-                "and show your whole hand. Keep one hand in the dashed area. Hold an open palm to "
-                "unlock, then relax your fingers before a command. Try a wider area if needed.",
+                "and show your whole hand. Keep one hand in the dashed area. Practice starts "
+                "paused; presentations start ready. Try a wider area if needed.",
             ),
             (
                 "If the camera won't start",
