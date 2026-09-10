@@ -58,8 +58,6 @@ def main():
         "--collect-data",
         "palmcue",
         "--exclude-module",
-        "matplotlib",
-        "--exclude-module",
         "pytest",
         "--exclude-module",
         "tkinter",
