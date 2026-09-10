@@ -21,6 +21,7 @@ class Settings:
     onboarding_done: bool = False
     debug_preview: bool = False
     auto_present: bool = True
+    presentation_feedback: bool = True
 
     @classmethod
     def from_dict(cls, data: object) -> "Settings":

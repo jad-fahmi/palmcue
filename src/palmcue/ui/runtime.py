@@ -3,7 +3,7 @@
 import time
 
 from PySide6.QtCore import QObject, QTimer
-from PySide6.QtGui import QImage
+from PySide6.QtGui import QCursor, QImage
 
 from palmcue.actions import Dispatcher, OutputBlocked
 from palmcue.camera import CameraService
@@ -24,6 +24,7 @@ class Runtime(QObject):
         self.session = None
         self.backend = None
         self.auto_armed = True
+        self.last_auto_check = 0.0
         self.desktop = None
         self.timer = QTimer(self)
         self.timer.setInterval(30)
@@ -43,7 +44,7 @@ class Runtime(QObject):
         self.desktop = Desktop(self.window, backend, self.stop_presenting)
         self.window.refresh_targets.setEnabled(True)
         self.window.refresh_targets.clicked.connect(self.refresh_targets)
-        self.window.present_button.clicked.connect(self.start_presenting)
+        self.window.present_button.clicked.connect(lambda: self.start_presenting())
         self.window.stop_button.clicked.connect(self.stop_presenting)
         self.window.targets.currentIndexChanged.connect(self.update_present_controls)
         self.refresh_targets()
@@ -63,6 +64,13 @@ class Runtime(QObject):
         self.update_present_controls()
 
     def update_present_controls(self):
+        self.window.present_camera_button.setText(
+            "Stop camera"
+            if self.fresh
+            else "Cancel camera setup"
+            if self.running
+            else "Start camera"
+        )
         busy = bool(self.session and (self.session.active or self.session.pending))
         self.window.present_button.setEnabled(
             self.fresh and not busy and self.window.targets.currentData() is not None
@@ -71,16 +79,16 @@ class Runtime(QObject):
         self.window.targets.setEnabled(not busy)
         self.window.refresh_targets.setEnabled(not busy)
         if not self.session or not self.fresh:
-            self.window.session_step.setText("Step 1 · Start camera in Practice")
+            self.window.session_step.setText("Start your camera to get ready")
         elif self.session.pending:
             self.window.session_step.setText("Step 3 · Bring your slideshow to the front")
         elif self.session.active and self.controller.locked:
             self.window.session_step.setText("Presenting · hold an open palm to unlock")
         elif self.session.active:
             self.window.session_step.setText("Presenting · hold two fingers for next slide")
-        elif self.window.targets.currentData() is None:
+        elif self.window.settings.auto_present or self.window.targets.currentData() is None:
             self.window.session_step.setText(
-                "Automatic · open a supported fullscreen slideshow"
+                "Camera ready · open your slides in fullscreen"
                 if self.window.settings.auto_present
                 else "Step 2 · Select your slideshow window"
             )
@@ -106,14 +114,24 @@ class Runtime(QObject):
         )
         self.update_present_controls()
         self.window.showMinimized()
+        if self.desktop and self.window.settings.presentation_feedback:
+            self.desktop.hud.reset()
+            self.desktop.hud.place(QCursor.pos())
+            self.desktop.hud.display("Starting in 5…", "Keep your slideshow in front")
 
     def stop_presenting(self):
+        was_busy = bool(self.session and (self.session.active or self.session.pending))
         if self.session:
             self.session.stop()
             self.lock()
             self.window.session_status.setText("Stopped · your slides are untouched")
             self.update_present_controls()
         if self.desktop:
+            self.desktop.hud.reset()
+            if was_busy and self.window.settings.presentation_feedback:
+                self.desktop.hud.display(
+                    "PalmCue · Stopped", "Open PalmCue to start again", temporary=True
+                )
             self.desktop.overlay.hide()
             self.desktop.tray.setToolTip("PalmCue · presentation stopped")
             self.desktop.status("stopped")
@@ -168,6 +186,10 @@ class Runtime(QObject):
             self.desktop.overlay.hide()
 
     def reconfigure(self, changes):
+        if set(changes) <= {"presentation_feedback", "debug_preview", "onboarding_done"}:
+            if self.desktop and not self.window.settings.presentation_feedback:
+                self.desktop.hud.reset()
+            return
         self.stop_presenting()
         self.controller = Controller(self.window.settings)
         self.lock()
@@ -191,11 +213,19 @@ class Runtime(QObject):
             if message:
                 self.lock()
                 self.window.session_status.setText(message)
+                if self.desktop and self.window.settings.presentation_feedback:
+                    self.desktop.hud.reset()
+                    if not self.session.active:
+                        self.desktop.hud.display("PalmCue · Paused", message, temporary=True)
             if self.session.pending:
                 seconds = max(1, int(self.session.deadline - now) + 1)
                 self.window.session_status.setText(
                     f"Switch to your slides · starting in {seconds}s"
                 )
+                if self.desktop and self.window.settings.presentation_feedback:
+                    self.desktop.hud.display(
+                        f"Starting in {seconds}…", "Keep your slideshow in front", (5 - seconds) / 5
+                    )
             self.update_present_controls()
         if not self.running:
             return
@@ -260,6 +290,17 @@ class Runtime(QObject):
         self.window.progress.setValue(round(self.controller.progress * 100))
         for event in events:
             self.handle_event(event)
+        if self.desktop and self.session.active and self.window.settings.presentation_feedback:
+            hint = self.controller.hint
+            if frame.hands == 0:
+                hint = (
+                    "Raise your hand into view"
+                    if self.controller.locked
+                    else "Ready when you are · raise your hand for a cue"
+                )
+            elif frame.hands > 1:
+                hint = "Show just one hand"
+            self.desktop.hud.feedback(self.controller.locked, hint, self.controller.progress)
         if self.desktop:
             state = "locked" if self.controller.locked else "ready"
             mode = "Presenting" if self.session.active else "Practice"
@@ -278,6 +319,10 @@ class Runtime(QObject):
         """Start a guarded session when a supported app enters true fullscreen."""
         if not self.session or not self.window.settings.auto_present or not self.fresh:
             return
+        now = time.monotonic() if now is None else now
+        if now - self.last_auto_check < 0.5 or now - self.last_frame > 0.7:
+            return
+        self.last_auto_check = now
         detector = getattr(self.backend, "fullscreen_presentation", None)
         target = detector() if detector else None
         if target is None:
@@ -290,6 +335,12 @@ class Runtime(QObject):
         if self.session and self.session.active:
             try:
                 self.session.send(event)
+                if (
+                    self.desktop
+                    and self.window.settings.presentation_feedback
+                    and event.action not in (Action.POINTER, Action.LOCK, Action.UNLOCK)
+                ):
+                    self.desktop.hud.acknowledge(event.action.value)
                 if event.action == Action.POINTER and self.desktop:
                     self.desktop.overlay.reveal()
             except (OutputBlocked, OSError) as error:

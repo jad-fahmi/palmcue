@@ -33,7 +33,7 @@ def test_present_page_explains_the_first_step(qtbot, tmp_path):
     window = MainWindow(tmp_path / "preferences.json")
     qtbot.addWidget(window)
     window.navigate(1)
-    assert window.session_step.text() == "Step 1 · Start camera in Practice"
+    assert window.session_step.text() == "Start your camera to get ready"
 
 
 def test_debug_preview_setting_is_visible_and_persisted(qtbot, tmp_path):

@@ -7,6 +7,7 @@ from PySide6.QtCore import QAbstractNativeEventFilter, QPointF, Qt, QTimer
 from PySide6.QtGui import QColor, QCursor, QPainter, QPen
 from PySide6.QtWidgets import QApplication, QMenu, QSystemTrayIcon, QWidget
 
+from palmcue.ui.hud import PresentationHUD
 from palmcue.ui.theme import app_icon
 
 
@@ -77,6 +78,7 @@ class Desktop:
     def __init__(self, window, backend, stop):
         self.window = window
         self.overlay = PointerOverlay()
+        self.hud = PresentationHUD()
         self.shortcut = StopShortcut(backend, stop)
         self.tray = QSystemTrayIcon(app_icon(), window)
         self._state = ""
@@ -114,4 +116,5 @@ class Desktop:
     def close(self):
         self.shortcut.close()
         self.overlay.close()
+        self.hud.close()
         self.tray.hide()

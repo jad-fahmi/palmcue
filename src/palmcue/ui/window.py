@@ -33,7 +33,7 @@ class MainWindow(QMainWindow):
         self.setWindowIcon(app_icon())
         self.setStyleSheet(STYLE)
         self.resize(1120, 800)
-        self.setMinimumSize(960, 650)
+        self.setMinimumSize(820, 600)
         root = QWidget()
         self.setCentralWidget(root)
         row = QHBoxLayout(root)
@@ -49,7 +49,9 @@ class MainWindow(QMainWindow):
         side.addSpacing(35)
         self.nav = QButtonGroup(self)
         self.stack = QStackedWidget()
-        for i, name in enumerate(("Practice", "Present", "Gesture guide", "Preferences", "Help")):
+        for i, name in enumerate(
+            ("Camera & practice", "Present", "Gesture guide", "Preferences", "Help")
+        ):
             button = QPushButton(name)
             button.setObjectName("nav")
             button.setCheckable(True)
@@ -99,9 +101,9 @@ class MainWindow(QMainWindow):
 
     def build_practice(self):
         layout = self.page(
-            "YOUR QUIET REHEARSAL SPACE",
-            "Make yourself comfortable.",
-            "Try a few gestures here. Your other apps stay untouched.",
+            "GET READY",
+            "Your camera. Your next cue.",
+            "Start your camera, try a gesture, then open your slides in fullscreen.",
         )
         self.welcome, box = card()
         self.welcome.setObjectName("banner")
@@ -151,6 +153,10 @@ class MainWindow(QMainWindow):
         practice_layout.addWidget(self.lock_button)
         row.addWidget(practice_card, 5)
         layout.addLayout(row)
+        next_step = QPushButton("Ready? Set up your presentation →")
+        next_step.setObjectName("primary")
+        next_step.clicked.connect(lambda: self.navigate(1))
+        layout.addWidget(next_step)
         layout.addWidget(
             label(
                 "No calibration needed for most people. If a gesture feels "
@@ -166,19 +172,54 @@ class MainWindow(QMainWindow):
 
     def build_present(self):
         layout = self.page(
-            "WHEN YOU'RE READY",
-            "Let your ideas take the stage.",
-            "PalmCue works alongside your slides, quietly in the background.",
+            "PRESENT WITH ONE SCREEN",
+            "Stay with your slides.",
+            "A small panel over your slides shows the countdown, hand feedback, and commands.",
         )
         frame, box = card()
-        box.addWidget(label("Choose your presentation", "subheading"))
+        box.addWidget(label("1. Camera on   2. Slides fullscreen   3. Open palm", "subheading"))
+        self.present_camera_button = QPushButton("Start camera")
+        self.present_camera_button.setObjectName("primary")
+        self.present_camera_button.clicked.connect(lambda: self.runtime.toggle_camera())
+        box.addWidget(self.present_camera_button)
+        self.auto_present_check = QCheckBox("Start automatically when slides go fullscreen")
+        self.auto_present_check.setChecked(self.settings.auto_present)
+        box.addWidget(self.auto_present_check)
         box.addWidget(
             label(
-                "Open your slides in presentation mode first. Then select that "
-                "window below. Refresh if you opened it just now.",
+                "In Canva, choose Present and enter fullscreen. Keep your slides in front "
+                "during the countdown, then hold an open palm to unlock. "
+                "Fullscreen detection also works with supported browsers, "
+                "PowerPoint and PDF viewers.",
                 "muted",
             )
         )
+        self.feedback_check = QCheckBox("Show feedback over my slides")
+        self.feedback_check.setChecked(self.settings.presentation_feedback)
+        self.feedback_check.toggled.connect(lambda v: self.update_setting(presentation_feedback=v))
+        box.addWidget(self.feedback_check)
+        box.addWidget(
+            label(
+                "Visible on this screen and in full-screen sharing. "
+                "Turn off for a clean audience view.",
+                "muted",
+            )
+        )
+        self.session_step = label("Start your camera to get ready", "badge")
+        box.addWidget(self.session_step)
+        self.session_status = label("Your camera is off.", "muted")
+        box.addWidget(self.session_status)
+        self.stop_button = QPushButton("Stop presenting")
+        self.stop_button.setObjectName("danger")
+        self.stop_button.setEnabled(False)
+        box.addWidget(self.stop_button)
+        layout.addWidget(frame)
+        manual_toggle = QCheckBox("Choose a window manually instead")
+        layout.addWidget(manual_toggle)
+        frame, box = card()
+        frame.setVisible(False)
+        manual_toggle.toggled.connect(frame.setVisible)
+        box.addWidget(label("Choose your presentation window", "subheading"))
         self.targets = QComboBox()
         self.targets.setAccessibleName("Presentation window")
         self.targets.addItem("Open your presentation, then refresh", None)
@@ -191,34 +232,10 @@ class MainWindow(QMainWindow):
                 "front. Hold an open palm to unlock when you're ready."
             )
         )
-        self.auto_present_check = QCheckBox(
-            "Automatically start when a supported fullscreen slideshow appears"
-        )
-        self.auto_present_check.setChecked(self.settings.auto_present)
-        self.auto_present_check.setToolTip(
-            "Works with Canva and browser slides, PowerPoint, and common PDF viewers. "
-            "PalmCue still waits five seconds and stays locked until you unlock it."
-        )
-        box.addWidget(self.auto_present_check)
-        box.addWidget(
-            label(
-                "Automatic mode only recognizes fullscreen presentation apps. "
-                "You can still choose a window yourself below.",
-                "muted",
-            )
-        )
         self.present_button = QPushButton("Start presenting")
         self.present_button.setObjectName("primary")
         self.present_button.setEnabled(False)
         box.addWidget(self.present_button)
-        self.session_status = label("Start the camera in Practice first.", "muted")
-        box.addWidget(self.session_status)
-        self.session_step = label("Step 1 · Start camera in Practice", "badge")
-        box.addWidget(self.session_step)
-        self.stop_button = QPushButton("Stop presenting")
-        self.stop_button.setObjectName("danger")
-        self.stop_button.setEnabled(False)
-        box.addWidget(self.stop_button)
         layout.addWidget(frame)
         frame, box = card()
         box.addWidget(label("You're always in control", "subheading"))
