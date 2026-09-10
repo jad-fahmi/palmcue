@@ -47,13 +47,13 @@ QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical { height: 0; }
 """
 
 
-def app_icon() -> QIcon:
+def app_icon(color="#21654f") -> QIcon:
     pix = QPixmap(128, 128)
     pix.fill(QColor("transparent"))
     p = QPainter(pix)
     p.setRenderHint(QPainter.RenderHint.Antialiasing)
-    p.setBrush(QColor("#21654f"))
-    p.setPen(QPen(QColor("#21654f")))
+    p.setBrush(QColor(color))
+    p.setPen(QPen(QColor(color)))
     p.drawRoundedRect(3, 3, 122, 122, 28, 28)
     p.setPen(QColor("#e7f0d3"))
     p.setFont(QFont("Segoe UI", 65, QFont.Weight.DemiBold))

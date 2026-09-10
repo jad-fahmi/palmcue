@@ -79,6 +79,7 @@ class Desktop:
         self.overlay = PointerOverlay()
         self.shortcut = StopShortcut(backend, stop)
         self.tray = QSystemTrayIcon(app_icon(), window)
+        self._state = ""
         self.tray.setToolTip("PalmCue · controls locked")
         menu = QMenu(window)
         menu.addAction("Open PalmCue", self.open)
@@ -103,6 +104,12 @@ class Desktop:
         self.window.showNormal()
         self.window.raise_()
         self.window.activateWindow()
+
+    def status(self, state):
+        if state != self._state:
+            self._state = state
+            color = {"ready": "#21654f", "locked": "#98702c", "stopped": "#607570"}[state]
+            self.tray.setIcon(app_icon(color))
 
     def close(self):
         self.shortcut.close()

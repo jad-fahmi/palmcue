@@ -87,6 +87,7 @@ class Runtime(QObject):
         if self.desktop:
             self.desktop.overlay.hide()
             self.desktop.tray.setToolTip("PalmCue · presentation stopped")
+            self.desktop.status("stopped")
 
     def toggle_camera(self):
         if self.running:
@@ -221,6 +222,7 @@ class Runtime(QObject):
             state = "locked" if self.controller.locked else "ready"
             mode = "Presenting" if self.session.active else "Practice"
             self.desktop.tray.setToolTip(f"PalmCue · {mode} · controls {state}")
+            self.desktop.status(state if self.session.active else "stopped")
             if self.controller.locked:
                 self.desktop.overlay.hide()
         pose = frame.observation.pose.value if frame.observation else "No clear hand"
