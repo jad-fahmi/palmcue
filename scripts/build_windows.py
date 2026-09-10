@@ -101,7 +101,7 @@ def main():
     else:
         raise SystemExit("Python license missing from the build environment")
     shutil.make_archive(
-        str(ROOT / "dist/PalmCue-0.1.0-windows-x64"), "zip", ROOT / "dist", "PalmCue"
+        str(ROOT / "dist/PalmCue-0.2.0-windows-x64"), "zip", ROOT / "dist", "PalmCue"
     )
     if args.iscc:
         subprocess.run([str(args.iscc.resolve()), str(ROOT / "packaging/PalmCue.iss")], check=True)

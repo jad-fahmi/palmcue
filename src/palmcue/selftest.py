@@ -43,6 +43,14 @@ def run(report_path: Path, camera=False) -> int:
                 app.processEvents()
                 assert not window.grab().isNull()
             report["checks"].append("All five desktop pages render")
+            from palmcue.ui.hud import PresentationHUD
+
+            hud = PresentationHUD()
+            hud.display("PalmCue · Locked", "Hold an open palm to unlock", 0.5)
+            app.processEvents()
+            assert not hud.grab().isNull()
+            hud.close()
+            report["checks"].append("Presentation feedback renders without camera input")
             if camera:
                 window.runtime.start_camera()
                 deadline = time.monotonic() + 30
