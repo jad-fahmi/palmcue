@@ -50,7 +50,7 @@ QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical { height: 0; }
 
 
 def app_icon(color=None) -> QIcon:
-    asset = Path(__file__).resolve().parents[1] / "assets/app-icon.png"
+    asset = Path(__file__).resolve().parents[1] / "assets/app-icon.svg"
     if asset.is_file():
         icon = QIcon(str(asset))
         if color is None:
