@@ -197,6 +197,13 @@ class MainWindow(QMainWindow):
                 "muted",
             )
         )
+        box.addWidget(
+            label(
+                "Fastest control: raise an open hand briefly, then flick your wrist "
+                "right for next or left for previous. Lower your hand between cues.",
+                "subheading",
+            )
+        )
         self.feedback_check = QCheckBox("Show feedback over my slides")
         self.feedback_check.setChecked(self.settings.presentation_feedback)
         self.feedback_check.toggled.connect(lambda v: self.update_setting(presentation_feedback=v))
@@ -288,8 +295,8 @@ class MainWindow(QMainWindow):
         entries = [
             (
                 "open",
-                "Reset for the next cue",
-                "Relaxed and open hands reset the last command.",
+                "Wrist flick · Recommended",
+                "In a presentation, briefly steady an open hand, then slide it left or right.",
             ),
             ("fist", "No presentation action", "A fist is ignored while presenting."),
             (
@@ -348,15 +355,15 @@ class MainWindow(QMainWindow):
         frame, box = card()
         box.addWidget(label("Gesture style", "subheading"))
         self.mode = QComboBox()
-        self.mode.addItem("Reliable · deliberate holds (recommended)", "reliable")
+        self.mode.addItem("Simple · wrist flicks with finger-pose fallback", "reliable")
         self.mode.addItem("Showcase · expressive swipes", "showcase")
         self.mode.setCurrentIndex(self.mode.findData(self.settings.mode))
         self.mode.setAccessibleName("Gesture style")
         box.addWidget(self.mode)
         box.addWidget(
             label(
-                "Reliable uses two fingers for next and three for previous. "
-                "Showcase uses two-finger swipes instead.",
+                "An open-hand wrist flick controls slides in either style. Simple also accepts "
+                "brief finger poses; Showcase adds two-finger swipes.",
                 "muted",
             )
         )

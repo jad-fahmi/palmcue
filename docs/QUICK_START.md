@@ -18,6 +18,11 @@ Windows 10 or 11, 64-bit. A built-in camera or USB webcam is all you need.
    Gestures are ready when the countdown ends. PalmCue stays minimized. You can turn automatic
    mode off and choose a window yourself if you prefer.
 
+For the quickest control, briefly steady an open hand and flick your wrist right
+for next or left for previous. PalmCue fires as soon as direction and speed are
+clear. Lower or relax your hand before the next flick. Two fingers and the German
+three remain available as slower fallback controls.
+
 One screen is enough. The feedback panel shows whether controls are locked,
 how long to hold a gesture, when a command was sent, and when your hand is out
 of view. It does not take keyboard focus or intercept clicks. Preview it from

@@ -8,6 +8,7 @@ It is built in Python and designed to work with existing presentation software r
 
 * Hand tracking using a standard webcam
 * Slide navigation with hand gestures
+* Low-latency open-hand wrist flicks for slide navigation
 * Virtual presentation pointer
 * Gesture-based zoom
 * Conservative recognition that ignores ambiguous hand shapes
