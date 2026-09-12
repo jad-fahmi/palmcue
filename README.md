@@ -9,6 +9,7 @@ It is built in Python and designed to work with existing presentation software r
 * Hand tracking using a standard webcam
 * Slide navigation with hand gestures
 * Optional low-latency wrist flicks in Expressive mode
+* Personal gestures taught with a guided countdown
 * Virtual presentation pointer
 * Gesture-based zoom
 * Conservative recognition that ignores ambiguous hand shapes
@@ -93,6 +94,17 @@ Uses simpler gestures designed for consistent recognition.
 Uses more expressive gestures such as two-finger slide navigation and five-finger continuous zoom.
 
 Showcase mode is optional.
+
+### Personal
+
+If the built-in gestures do not suit the way you move, choose **Personal** in
+Preferences. Select **Teach Next** or **Teach Previous**, wait for the three-second
+countdown, and make one natural motion. PalmCue stores the motion on your computer
+and recognizes its direction and scale while you present.
+
+Lowering your hand or moving it out of view resets the current motion. It does not
+lock presentation controls, and there is no open-palm unlock pose before your next
+command.
 
 ## Status
 

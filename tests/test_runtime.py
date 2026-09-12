@@ -97,3 +97,16 @@ def test_preferences_restart_camera_only_when_needed(qtbot, tmp_path):
     assert camera.started
     window.close()
     assert not camera.started
+
+
+def test_teaching_starts_camera_and_arms_countdown_in_one_click(qtbot, tmp_path):
+    camera = FakeCamera()
+    window = MainWindow(tmp_path / "prefs.json", camera)
+    qtbot.addWidget(window)
+
+    window.runtime.start_teaching("next")
+
+    assert camera.started
+    assert window.runtime.teaching_action == "next"
+    assert window.runtime.teaching_starts == 0
+    assert "automatically" in window.notice.text()

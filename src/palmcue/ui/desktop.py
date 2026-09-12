@@ -82,7 +82,7 @@ class Desktop:
         self.shortcut = StopShortcut(backend, stop)
         self.tray = QSystemTrayIcon(app_icon(), window)
         self._state = ""
-        self.tray.setToolTip("PalmCue · controls locked")
+        self.tray.setToolTip("PalmCue · waiting for a presentation")
         menu = QMenu(window)
         menu.addAction("Open PalmCue", self.open)
         menu.addAction("Stop presenting", stop)

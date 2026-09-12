@@ -29,7 +29,7 @@ class PresentationHUD(QWidget):
         layout.setContentsMargins(18, 14, 18, 14)
         self.title = QLabel("PalmCue · Locked")
         self.title.setObjectName("title")
-        self.detail = QLabel("Hold an open palm to unlock")
+        self.detail = QLabel("Raise your hand whenever you want to give a cue")
         self.detail.setObjectName("detail")
         self.detail.setWordWrap(True)
         self.progress = QProgressBar()

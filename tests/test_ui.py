@@ -44,3 +44,14 @@ def test_debug_preview_setting_is_visible_and_persisted(qtbot, tmp_path):
     other = MainWindow(tmp_path / "preferences.json")
     qtbot.addWidget(other)
     assert other.debug_preview_check.isChecked()
+
+
+def test_personal_mode_and_teaching_controls_are_clear(qtbot, tmp_path):
+    window = MainWindow(tmp_path / "preferences.json")
+    qtbot.addWidget(window)
+    personal = window.mode.findData("learned")
+    assert personal >= 0
+    assert "Personal" in window.mode.itemText(personal)
+    assert window.teach_next.text() == "Teach Next"
+    assert window.teach_previous.text() == "Teach Previous"
+    assert "No personal motions" in window.learned_status.text()

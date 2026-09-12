@@ -46,7 +46,7 @@ def run(report_path: Path, camera=False) -> int:
             from palmcue.ui.hud import PresentationHUD
 
             hud = PresentationHUD()
-            hud.display("PalmCue · Locked", "Hold an open palm to unlock", 0.5)
+            hud.display("PalmCue · Ready", "Raise your hand whenever you want a cue", 0.5)
             app.processEvents()
             assert not hud.grab().isNull()
             hud.close()

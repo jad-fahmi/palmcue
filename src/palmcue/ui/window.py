@@ -81,6 +81,7 @@ class MainWindow(QMainWindow):
         self.build_preferences()
         self.build_help()
         self.runtime = Runtime(self, camera)
+        self.refresh_learned_status()
 
     def page(self, eyebrow, title, subtitle):
         content = QWidget()
@@ -143,7 +144,7 @@ class MainWindow(QMainWindow):
         practice_layout.addWidget(label("Try it here", "subheading"))
         self.deck = PracticeDeck()
         practice_layout.addWidget(self.deck, 1)
-        self.gesture_status = label("Practice starts paused · hold an open palm", "subheading")
+        self.gesture_status = label("Ready when your hand appears", "subheading")
         practice_layout.addWidget(self.gesture_status)
         self.progress = QProgressBar()
         self.progress.setRange(0, 100)
@@ -152,7 +153,8 @@ class MainWindow(QMainWindow):
         practice_layout.addWidget(self.progress)
         self.last_action = label("Waiting for your first cue", "muted")
         practice_layout.addWidget(self.last_action)
-        self.lock_button = QPushButton("Pause gestures")
+        self.lock_button = QPushButton("Reset gesture detection")
+        self.lock_button.hide()
         practice_layout.addWidget(self.lock_button)
         row.addWidget(practice_card, 5)
         layout.addLayout(row)
@@ -278,8 +280,8 @@ class MainWindow(QMainWindow):
             self.feedback_preview = PresentationHUD()
         self.feedback_preview.place(self.frameGeometry().center())
         self.feedback_preview.display(
-            "PalmCue · Locked",
-            "Hold an open palm to unlock · this is a preview",
+            "PalmCue · Ready",
+            "Raise your hand whenever you want to give a cue · preview",
             0.6,
             temporary=True,
         )
@@ -340,8 +342,8 @@ class MainWindow(QMainWindow):
         layout.addLayout(grid)
         layout.addWidget(
             label(
-                "Between slide commands, open your palm for a brief moment. "
-                "Keeping a gesture held will never race through your slides.",
+                "Lower or relax your hand briefly between slide commands. "
+                "Returning with the next gesture is enough; there is no unlock pose.",
                 "muted",
             )
         )
@@ -351,13 +353,14 @@ class MainWindow(QMainWindow):
         layout = self.page(
             "MAKE IT FEEL NATURAL",
             "A setup that fits you.",
-            "Changes save automatically and lock controls for safety.",
+            "Changes save automatically. Personal motions stay on this computer.",
         )
         frame, box = card()
         box.addWidget(label("Gesture style", "subheading"))
         self.mode = QComboBox()
         self.mode.addItem("Simple · brief finger poses (recommended)", "reliable")
         self.mode.addItem("Expressive · quick wrist flicks", "showcase")
+        self.mode.addItem("Personal · motions you teach PalmCue", "learned")
         self.mode.setCurrentIndex(self.mode.findData(self.settings.mode))
         self.mode.setAccessibleName("Gesture style")
         box.addWidget(self.mode)
@@ -393,6 +396,26 @@ class MainWindow(QMainWindow):
                 "muted",
             )
         )
+        layout.addWidget(frame)
+        frame, box = card()
+        box.addWidget(label("Teach PalmCue your movement", "subheading"))
+        box.addWidget(
+            label(
+                "Choose an action, wait for the countdown, then move naturally. "
+                "PalmCue remembers the motion on this computer.",
+                "muted",
+            )
+        )
+        teach_row = QHBoxLayout()
+        self.teach_next = QPushButton("Teach Next")
+        self.teach_previous = QPushButton("Teach Previous")
+        self.teach_next.clicked.connect(lambda: self.runtime.start_teaching("next"))
+        self.teach_previous.clicked.connect(lambda: self.runtime.start_teaching("previous"))
+        teach_row.addWidget(self.teach_next)
+        teach_row.addWidget(self.teach_previous)
+        box.addLayout(teach_row)
+        self.learned_status = label("No personal motions taught yet", "muted")
+        box.addWidget(self.learned_status)
         layout.addWidget(frame)
         frame, box = card()
         box.addWidget(label("Camera & gesture area", "subheading"))
@@ -461,6 +484,15 @@ class MainWindow(QMainWindow):
         self.hold.setEnabled(self.settings.mode == "reliable")
         self.zoom_check.setEnabled(self.settings.mode == "showcase")
         self.click_check.setEnabled(self.settings.pointer)
+
+    def refresh_learned_status(self):
+        if not hasattr(self, "runtime"):
+            return
+        taught = self.runtime.library.templates
+        names = [name.title() for name in ("next", "previous") if name in taught]
+        self.learned_status.setText(
+            "Learned: " + ", ".join(names) if names else "No personal motions taught yet"
+        )
 
     def update_setting(self, **changes):
         self.settings = replace(self.settings, **changes)

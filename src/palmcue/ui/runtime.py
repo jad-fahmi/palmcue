@@ -8,6 +8,7 @@ from PySide6.QtGui import QCursor, QImage
 from palmcue.actions import Dispatcher, OutputBlocked
 from palmcue.camera import CameraService
 from palmcue.controller import Action, Controller
+from palmcue.learned import GestureLibrary, MotionRecorder
 from palmcue.session import Session
 
 
@@ -16,7 +17,8 @@ class Runtime(QObject):
         super().__init__(window)
         self.window = window
         self.camera = camera or CameraService()
-        self.controller = Controller(window.settings)
+        self.library = GestureLibrary(window.settings_path.with_name("learned-gestures.json"))
+        self.controller = Controller(window.settings, self.library)
         self.running = False
         self.started = 0.0
         self.last_frame = 0.0
@@ -27,6 +29,10 @@ class Runtime(QObject):
         self.last_auto_check = 0.0
         self.automatic_session = False
         self.desktop = None
+        self.teaching_action = None
+        self.teaching_starts = 0.0
+        self.teaching_ends = 0.0
+        self.recorder = None
         self.timer = QTimer(self)
         self.timer.setInterval(30)
         self.timer.timeout.connect(self.poll)
@@ -36,6 +42,7 @@ class Runtime(QObject):
         window.scan_button.clicked.connect(lambda: self.start_camera(scan=True))
         window.refresh_targets.setEnabled(False)
         window.preview.debug = window.settings.debug_preview
+        window.refresh_learned_status()
 
     def connect_desktop(self, backend):
         from palmcue.ui.desktop import Desktop
@@ -166,6 +173,8 @@ class Runtime(QObject):
             self.camera_error("The camera could not start. Close other camera apps and retry.")
 
     def stop_camera(self):
+        self.teaching_action = None
+        self.recorder = None
         self.stop_presenting()
         self.running = False
         self.fresh = False
@@ -183,7 +192,7 @@ class Runtime(QObject):
 
     def lock(self):
         self.controller.lock()
-        self.window.gesture_status.setText("Hold an open palm to unlock")
+        self.window.gesture_status.setText("Ready when your hand appears")
         self.window.progress.setValue(0)
         self.window.deck.pointer = None
         self.window.deck.update()
@@ -200,7 +209,7 @@ class Runtime(QObject):
                 self.desktop.hud.reset()
             return
         self.stop_presenting()
-        self.controller = Controller(self.window.settings)
+        self.controller = Controller(self.window.settings, self.library)
         self.lock()
         if self.running and any(key in changes for key in ("camera", "mirror")):
             self.start_camera()
@@ -258,7 +267,7 @@ class Runtime(QObject):
             if self.last_frame and now - self.last_frame > 0.7:
                 self.fresh = False
                 self.lock()
-                self.window.camera_status.setText("Waiting for the camera · controls locked")
+                self.window.camera_status.setText("Waiting for the camera · no commands are sent")
             if now - (self.last_frame or self.started) > (4 if self.last_frame else 25):
                 self.camera_error(
                     "The camera is not responding. Reconnect it, close other "
@@ -298,23 +307,23 @@ class Runtime(QObject):
                 frame.landmarks if self.window.settings.debug_preview else ()
             )
             self.window.preview.update()
-        if self.session and self.session.pending:
+        if self.teaching_action or (self.session and self.session.pending):
             self.lock()
             events = []
         else:
+            if self.controller.locked:
+                self.controller.begin_presentation()
             events = self.controller.update(frame.observation, frame.captured, frame.hands)
-        self.window.gesture_status.setText(self.controller.hint)
-        self.window.progress.setValue(round(self.controller.progress * 100))
+        teaching_feedback = self.update_teaching(frame, now)
+        if not teaching_feedback:
+            self.window.gesture_status.setText(self.controller.hint)
+            self.window.progress.setValue(round(self.controller.progress * 100))
         for event in events:
             self.handle_event(event)
         if self.desktop and self.session.active and self.window.settings.presentation_feedback:
             hint = self.controller.hint
             if frame.hands == 0:
-                hint = (
-                    "Raise your hand into view"
-                    if self.controller.locked
-                    else "Ready when you are · raise your hand for a cue"
-                )
+                hint = "Ready when you are · raise your hand for a cue"
             elif frame.hands > 1:
                 hint = "Show just one hand"
             elif hint == "Move your hand inside the marked area":
@@ -369,6 +378,77 @@ class Runtime(QObject):
             return
         if self.auto_armed and not self.session.active and not self.session.pending:
             self.start_presenting(target, automatic=True)
+
+    def start_teaching(self, action):
+        if not self.fresh:
+            self.window.navigate(0)
+            if not self.running:
+                self.start_camera()
+            # start_camera resets teaching state, so arm it after camera startup.
+            self.teaching_action = action
+            self.teaching_starts = 0.0
+            self.teaching_ends = 0.0
+            self.window.show_notice("Starting your camera. The countdown will begin automatically.")
+            self.window.gesture_status.setText("Starting camera for teaching…")
+            return
+        self.stop_presenting()
+        self.window.navigate(0)
+        self.teaching_action = action
+        self.teaching_starts = time.monotonic() + 3
+        self.teaching_ends = self.teaching_starts + 1.5
+        self.recorder = None
+        self.window.show_notice("")
+        self.window.gesture_status.setText(f"Get ready to teach {action.title()} · 3")
+
+    def update_teaching(self, frame, now):
+        if not self.teaching_action:
+            return False
+        if self.teaching_starts == 0.0:
+            self.teaching_starts = now + 3
+            self.teaching_ends = self.teaching_starts + 1.5
+            self.window.show_notice("")
+        if now < self.teaching_starts:
+            seconds = max(1, int(self.teaching_starts - now) + 1)
+            self.window.gesture_status.setText(
+                f"Get ready to teach {self.teaching_action.title()} · {seconds}"
+            )
+            self.window.progress.setValue(round((3 - (self.teaching_starts - now)) / 3 * 100))
+            return True
+        if self.recorder is None:
+            self.recorder = MotionRecorder()
+        if now < self.teaching_ends:
+            self.recorder.add(frame.captured, frame.observation)
+            self.window.gesture_status.setText(
+                f"Move now · teaching {self.teaching_action.title()}"
+            )
+            self.window.progress.setValue(round((now - self.teaching_starts) / 1.5 * 100))
+            return True
+        action = self.teaching_action
+        template = self.recorder.finish()
+        self.teaching_action = None
+        self.recorder = None
+        if template is None:
+            self.window.gesture_status.setText(
+                "I could not see enough movement · try teaching again"
+            )
+            self.window.show_notice(
+                "Keep one hand visible and make a clear motion during Move now."
+            )
+            return True
+        try:
+            self.library.save(action, template)
+        except OSError:
+            self.window.show_notice(
+                "That motion could not be saved. Check your user folder access."
+            )
+            return True
+        self.window.mode.blockSignals(True)
+        self.window.mode.setCurrentIndex(self.window.mode.findData("learned"))
+        self.window.mode.blockSignals(False)
+        self.window.update_setting(mode="learned")
+        self.window.gesture_status.setText(f"Learned {action.title()} · try it here")
+        self.window.refresh_learned_status()
+        return True
 
     def handle_event(self, event):
         if self.session and self.session.active:
