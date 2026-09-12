@@ -1,3 +1,5 @@
+from dataclasses import replace
+
 from palmcue.controller import Action, Controller
 from palmcue.geometry import Observation, Point, Pose
 
@@ -113,9 +115,27 @@ def test_lowering_hand_releases_command_without_open_palm():
 
 def test_open_hand_wrist_flick_controls_slides_without_holding_pose():
     controller = Controller()
+    controller.settings = replace(controller.settings, mode="showcase")
     controller.begin_presentation()
     assert controller.update(obs(Pose.OPEN), 0.00) == []
     assert controller.update(obs(Pose.OPEN, x=0.505), 0.11) == []
     events = controller.update(obs(Pose.OPEN, x=0.62), 0.27)
     assert [event.action for event in events] == [Action.NEXT]
     assert controller.update(obs(Pose.OPEN, x=0.50), 0.45) == []
+
+
+def test_wrist_flick_is_not_enabled_in_simple_mode():
+    controller = Controller()
+    controller.begin_presentation()
+    controller.update(obs(Pose.OPEN), 0.00)
+    controller.update(obs(Pose.OPEN, x=0.505), 0.11)
+    assert controller.update(obs(Pose.OPEN, x=0.62), 0.27) == []
+
+
+def test_expressive_wrist_flick_can_be_rehearsed_in_practice():
+    controller = ready()
+    controller.settings = replace(controller.settings, mode="showcase")
+    controller.update(obs(Pose.OPEN), 2.00)
+    controller.update(obs(Pose.OPEN, x=0.505), 2.09)
+    events = controller.update(obs(Pose.OPEN, x=0.62), 2.24)
+    assert [event.action for event in events] == [Action.NEXT]

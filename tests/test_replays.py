@@ -1,4 +1,5 @@
 import random
+from dataclasses import replace
 
 import pytest
 
@@ -32,6 +33,7 @@ def test_ten_minutes_of_short_noisy_poses_cannot_unlock():
 def test_open_hand_camera_jitter_does_not_become_a_wrist_flick():
     rng = random.Random(9812)
     controller = Controller()
+    controller.settings = replace(controller.settings, mode="showcase")
     controller.begin_presentation()
     events = []
     for frame in range(30 * 60):

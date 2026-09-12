@@ -17,14 +17,19 @@ class WristFlick:
         self.armed = False
 
     def update(self, obs: Observation, now: float) -> str | None:
-        if obs.pose != Pose.OPEN:
+        if obs.pose not in (Pose.OPEN, Pose.TWO):
             self.reset()
             return None
-        if self.anchor is None:
+        if self.anchor is None or self.anchor.pose != obs.pose:
             self.anchor, self.since = obs, now
             return None
-        dx = obs.center.x - self.anchor.center.x
-        dy = obs.center.y - self.anchor.center.y
+        center_dx = obs.center.x - self.anchor.center.x
+        center_dy = obs.center.y - self.anchor.center.y
+        tip_dx = obs.pointer.x - self.anchor.pointer.x
+        tip_dy = obs.pointer.y - self.anchor.pointer.y
+        # A real wrist flick sweeps the fingertips even if the palm barely translates.
+        dx = 0.55 * center_dx + 0.45 * tip_dx
+        dy = 0.55 * center_dy + 0.45 * tip_dy
         elapsed = now - self.since
         if not self.armed:
             if math.hypot(dx, dy) > 0.025:

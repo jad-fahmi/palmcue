@@ -3,7 +3,7 @@ from dataclasses import replace
 from test_controller import feed, obs, ready
 
 from palmcue.controller import Action
-from palmcue.geometry import Pose
+from palmcue.geometry import Observation, Point, Pose
 from palmcue.motion import Motion, WristFlick
 
 
@@ -20,6 +20,16 @@ def test_wrist_flick_rejects_unprepared_slow_and_diagonal_motion():
     assert flick.update(obs(Pose.OPEN, x=0.62), 0.08) is None
     assert flick.update(obs(Pose.OPEN, x=0.625), 0.20) is None
     assert flick.update(obs(Pose.OPEN, x=0.73, y=0.60), 0.36) is None
+
+
+def test_wrist_rotation_can_fire_without_large_palm_translation():
+    flick = WristFlick()
+    start = Observation(Pose.OPEN, Point(0.5, 0.5), Point(0.5, 0.30), scale=0.1)
+    prepared = Observation(Pose.OPEN, Point(0.5, 0.5), Point(0.505, 0.30), scale=0.1)
+    swept = Observation(Pose.OPEN, Point(0.51, 0.5), Point(0.68, 0.30), scale=0.1)
+    assert flick.update(start, 0.00) is None
+    assert flick.update(prepared, 0.09) is None
+    assert flick.update(swept, 0.24) == "next"
 
 
 def test_swipe_requires_preparation_and_release():

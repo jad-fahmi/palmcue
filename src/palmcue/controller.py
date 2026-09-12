@@ -181,8 +181,8 @@ class Controller:
             return []
         if now < self._cooldown:
             return []
-        if self.presentation_mode and obs.pose == Pose.OPEN:
-            self.hint = "Slide your open hand left or right"
+        if self.settings.mode == "showcase" and obs.pose in (Pose.OPEN, Pose.TWO):
+            self.hint = "Flick your wrist left or right"
             result = self._flick.update(obs, now)
             if result:
                 return self._fire(Action.NEXT if result == "next" else Action.PREVIOUS, now)
