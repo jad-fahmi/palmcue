@@ -5,6 +5,45 @@ import math
 from palmcue.geometry import Observation, Pose
 
 
+class WristFlick:
+    """Low-latency horizontal intent from a briefly prepared open hand."""
+
+    def __init__(self):
+        self.reset()
+
+    def reset(self) -> None:
+        self.anchor: Observation | None = None
+        self.since = 0.0
+        self.armed = False
+
+    def update(self, obs: Observation, now: float) -> str | None:
+        if obs.pose != Pose.OPEN:
+            self.reset()
+            return None
+        if self.anchor is None:
+            self.anchor, self.since = obs, now
+            return None
+        dx = obs.center.x - self.anchor.center.x
+        dy = obs.center.y - self.anchor.center.y
+        elapsed = now - self.since
+        if not self.armed:
+            if math.hypot(dx, dy) > 0.025:
+                self.anchor, self.since = obs, now
+            elif elapsed >= 0.08:
+                self.anchor, self.since, self.armed = obs, now, True
+            return None
+        if elapsed > 0.55 or abs(dy) > 0.065:
+            self.reset()
+            return None
+        speed = abs(dx) / max(elapsed, 1e-6)
+        # Scale travel to the visible hand, bounded for near and distant cameras.
+        travel = max(0.075, min(0.12, obs.scale * 0.65))
+        if abs(dx) >= travel and abs(dx) > 2.4 * abs(dy) and speed >= 0.30:
+            self.reset()
+            return "next" if dx > 0 else "previous"
+        return None
+
+
 class Motion:
     def __init__(self):
         self.reset()

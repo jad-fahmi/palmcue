@@ -4,7 +4,22 @@ from test_controller import feed, obs, ready
 
 from palmcue.controller import Action
 from palmcue.geometry import Pose
-from palmcue.motion import Motion
+from palmcue.motion import Motion, WristFlick
+
+
+def test_wrist_flick_fires_immediately_after_brief_preparation():
+    flick = WristFlick()
+    assert flick.update(obs(Pose.OPEN), 0.00) is None
+    assert flick.update(obs(Pose.OPEN, x=0.505), 0.11) is None
+    assert flick.update(obs(Pose.OPEN, x=0.62), 0.27) == "next"
+
+
+def test_wrist_flick_rejects_unprepared_slow_and_diagonal_motion():
+    flick = WristFlick()
+    assert flick.update(obs(Pose.OPEN), 0.0) is None
+    assert flick.update(obs(Pose.OPEN, x=0.62), 0.08) is None
+    assert flick.update(obs(Pose.OPEN, x=0.625), 0.20) is None
+    assert flick.update(obs(Pose.OPEN, x=0.73, y=0.60), 0.36) is None
 
 
 def test_swipe_requires_preparation_and_release():

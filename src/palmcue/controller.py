@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from enum import StrEnum
 
 from palmcue.geometry import Observation, Point, Pose
-from palmcue.motion import Motion
+from palmcue.motion import Motion, WristFlick
 from palmcue.settings import Settings
 
 
@@ -51,6 +51,7 @@ class Controller:
         self._pointer: Point | None = None
         self._point_time = -math.inf
         self._motion = Motion()
+        self._flick = WristFlick()
         self.presentation_mode = False
 
     def begin_presentation(self) -> None:
@@ -78,6 +79,7 @@ class Controller:
         self._release_since = None
         self.progress = 0.0
         self._motion.reset()
+        self._flick.reset()
 
     def _release_latch(self, now: float) -> None:
         if not self._latched:
@@ -166,7 +168,9 @@ class Controller:
                     self.hint = "Ready for your first command"
                     return [Event(Action.UNLOCK)]
             return []
-        if obs.pose == Pose.UNKNOWN or (self._latched and obs.pose == Pose.OPEN):
+        if obs.pose == Pose.UNKNOWN or (
+            not self.presentation_mode and self._latched and obs.pose == Pose.OPEN
+        ):
             self._release_latch(now)
             self.hint = "Ready for your next gesture"
             self.progress = 0
@@ -176,6 +180,12 @@ class Controller:
             self.hint = "Relax or lower your hand before the next command"
             return []
         if now < self._cooldown:
+            return []
+        if self.presentation_mode and obs.pose == Pose.OPEN:
+            self.hint = "Slide your open hand left or right"
+            result = self._flick.update(obs, now)
+            if result:
+                return self._fire(Action.NEXT if result == "next" else Action.PREVIOUS, now)
             return []
         if obs.pose == Pose.POINT and self.settings.pointer:
             self.hint = "Point with your index finger"

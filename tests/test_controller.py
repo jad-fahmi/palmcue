@@ -109,3 +109,13 @@ def test_lowering_hand_releases_command_without_open_palm():
     for now in (2.65, 2.75, 2.9):
         controller.update(None, now, 0)
     assert feed(controller, Pose.TWO, 3.0, 0.6) == [Action.NEXT]
+
+
+def test_open_hand_wrist_flick_controls_slides_without_holding_pose():
+    controller = Controller()
+    controller.begin_presentation()
+    assert controller.update(obs(Pose.OPEN), 0.00) == []
+    assert controller.update(obs(Pose.OPEN, x=0.505), 0.11) == []
+    events = controller.update(obs(Pose.OPEN, x=0.62), 0.27)
+    assert [event.action for event in events] == [Action.NEXT]
+    assert controller.update(obs(Pose.OPEN, x=0.50), 0.45) == []
