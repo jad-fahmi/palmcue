@@ -5,6 +5,7 @@ from dataclasses import dataclass
 from enum import StrEnum
 
 from palmcue.geometry import Observation, Point, Pose
+from palmcue.learned import GestureLibrary, LearnedMatcher
 from palmcue.motion import Motion, WristFlick
 from palmcue.settings import Settings
 
@@ -35,7 +36,7 @@ AREAS = {
 
 
 class Controller:
-    def __init__(self, settings: Settings | None = None):
+    def __init__(self, settings: Settings | None = None, learned: GestureLibrary | None = None):
         self.settings = settings or Settings()
         self.locked = True
         self.progress = 0.0
@@ -52,6 +53,7 @@ class Controller:
         self._point_time = -math.inf
         self._motion = Motion()
         self._flick = WristFlick()
+        self._learned = LearnedMatcher(learned) if learned else None
         self.presentation_mode = False
 
     def begin_presentation(self) -> None:
@@ -80,6 +82,8 @@ class Controller:
         self.progress = 0.0
         self._motion.reset()
         self._flick.reset()
+        if self._learned:
+            self._learned.reset()
 
     def _release_latch(self, now: float) -> None:
         if not self._latched:
@@ -130,6 +134,17 @@ class Controller:
             self._point_time = -math.inf
             self._pointer = None
             self.hint = "Move your hand inside the marked area"
+            return []
+        if (
+            self.settings.mode == "learned"
+            and self._learned
+            and not self._latched
+            and now >= self._cooldown
+        ):
+            result = self._learned.update(obs, now)
+            self.hint = "Make one of your taught motions"
+            if result:
+                return self._fire(Action.NEXT if result == "next" else Action.PREVIOUS, now)
             return []
         if obs.pose != self._pose or self._origin is None:
             self._motion.reset()

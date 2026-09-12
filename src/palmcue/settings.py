@@ -37,7 +37,7 @@ class Settings:
             else:
                 valid = type(value) is type(default)
             result[key] = value if valid else default
-        if result["mode"] not in ("reliable", "showcase"):
+        if result["mode"] not in ("reliable", "showcase", "learned"):
             result["mode"] = "reliable"
         if result["area"] not in ("center", "left", "right", "wide"):
             result["area"] = "center"
