@@ -199,8 +199,8 @@ class MainWindow(QMainWindow):
         )
         box.addWidget(
             label(
-                "Fastest control: raise an open hand briefly, then flick your wrist "
-                "right for next or left for previous. Lower your hand between cues.",
+                "Simple mode uses brief finger poses. Expressive mode adds a wrist flick: "
+                "right for next or left for previous.",
                 "subheading",
             )
         )
@@ -295,8 +295,9 @@ class MainWindow(QMainWindow):
         entries = [
             (
                 "open",
-                "Wrist flick · Recommended",
-                "In a presentation, briefly steady an open hand, then slide it left or right.",
+                "Wrist flick · Expressive",
+                "Briefly steady an open hand or two fingers, then turn or "
+                "slide your wrist sideways.",
             ),
             ("fist", "No presentation action", "A fist is ignored while presenting."),
             (
@@ -355,15 +356,15 @@ class MainWindow(QMainWindow):
         frame, box = card()
         box.addWidget(label("Gesture style", "subheading"))
         self.mode = QComboBox()
-        self.mode.addItem("Simple · wrist flicks with finger-pose fallback", "reliable")
-        self.mode.addItem("Showcase · expressive swipes", "showcase")
+        self.mode.addItem("Simple · brief finger poses (recommended)", "reliable")
+        self.mode.addItem("Expressive · quick wrist flicks", "showcase")
         self.mode.setCurrentIndex(self.mode.findData(self.settings.mode))
         self.mode.setAccessibleName("Gesture style")
         box.addWidget(self.mode)
         box.addWidget(
             label(
-                "An open-hand wrist flick controls slides in either style. Simple also accepts "
-                "brief finger poses; Showcase adds two-finger swipes.",
+                "Simple uses two fingers for next and the German three for previous. "
+                "Expressive recognizes sideways fingertip and palm motion from the wrist.",
                 "muted",
             )
         )
