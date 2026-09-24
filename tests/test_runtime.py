@@ -2,6 +2,7 @@ import time
 
 from palmcue.actions import Dispatcher, Target
 from palmcue.camera import Frame
+from palmcue.geometry import Observation, Point, Pose
 from palmcue.session import Session
 from palmcue.ui.window import MainWindow
 
@@ -28,6 +29,7 @@ class AutoBackend:
     def __init__(self):
         self.target = Target(123, 42, "Canva presentation")
         self.active = self.target.handle
+        self.keys = []
 
     def fullscreen_presentation(self):
         return self.target
@@ -42,7 +44,41 @@ class AutoBackend:
         return False
 
     def key(self, code, control=False):
-        pass
+        self.keys.append((code, control))
+
+
+def test_practice_does_not_enter_presentation_mode(qtbot, tmp_path):
+    camera = FakeCamera()
+    window = MainWindow(tmp_path / "prefs.json", camera)
+    qtbot.addWidget(window)
+    runtime = window.runtime
+    runtime.start_camera()
+    now = time.monotonic()
+    camera.frame = Frame(
+        now,
+        Observation(Pose.OPEN, Point(0.5, 0.5), Point(0.5, 0.3)),
+        1,
+        b"\x00" * 12,
+        2,
+        2,
+        0,
+    )
+
+    runtime.poll()
+
+    assert not runtime.controller.presentation_mode
+    assert runtime.controller.locked
+    window.close()
+
+
+def test_unreadable_personal_gestures_are_reported(qtbot, tmp_path):
+    (tmp_path / "learned-gestures.json").write_text("{broken", encoding="utf-8")
+    window = MainWindow(tmp_path / "prefs.json", FakeCamera())
+    qtbot.addWidget(window)
+
+    assert "Personal gestures could not be read" in window.notice.text()
+
+    window.close()
 
 
 def test_automatic_mode_starts_guarded_countdown(qtbot, tmp_path):

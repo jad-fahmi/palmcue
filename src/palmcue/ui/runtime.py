@@ -18,6 +18,9 @@ class Runtime(QObject):
         self.window = window
         self.camera = camera or CameraService()
         self.library = GestureLibrary(window.settings_path.with_name("learned-gestures.json"))
+        if self.library.warning:
+            notice = window.notice.text()
+            window.show_notice("\n".join(filter(None, (notice, self.library.warning))))
         self.controller = Controller(window.settings, self.library)
         self.running = False
         self.started = 0.0
@@ -311,8 +314,6 @@ class Runtime(QObject):
             self.lock()
             events = []
         else:
-            if self.controller.locked:
-                self.controller.begin_presentation()
             events = self.controller.update(frame.observation, frame.captured, frame.hands)
         teaching_feedback = self.update_teaching(frame, now)
         if not teaching_feedback:

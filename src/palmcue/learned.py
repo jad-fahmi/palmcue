@@ -7,6 +7,7 @@ from dataclasses import asdict, dataclass
 from pathlib import Path
 
 from palmcue.geometry import Observation
+from palmcue.storage import write_json
 
 
 @dataclass(frozen=True)
@@ -26,25 +27,50 @@ class GestureLibrary:
     def __init__(self, path: Path):
         self.path = path
         self.templates: dict[str, MotionTemplate] = {}
+        self.warning = ""
         self.load()
 
     def load(self):
         try:
             data = json.loads(self.path.read_text(encoding="utf-8"))
-            for action in ("next", "previous"):
-                values = data.get(action)
-                if isinstance(values, dict):
-                    self.templates[action] = MotionTemplate(**values)
-        except (OSError, ValueError, TypeError):
-            self.templates = {}
+        except FileNotFoundError:
+            return
+        except (OSError, ValueError):
+            self.warning = "Personal gestures could not be read. Teach them again."
+            return
+        if not isinstance(data, dict):
+            self.warning = "Personal gestures could not be read. Teach them again."
+            return
+        for action in ("next", "previous"):
+            values = data.get(action)
+            if values is None:
+                continue
+            try:
+                if not isinstance(values, dict):
+                    raise TypeError
+                template = MotionTemplate(**values)
+                numbers = (*template.vector, template.duration)
+                if (
+                    any(
+                        type(value) not in (int, float) or not math.isfinite(value)
+                        for value in numbers
+                    )
+                    or template.duration <= 0
+                    or math.hypot(*template.vector) == 0
+                ):
+                    raise ValueError
+            except (TypeError, ValueError):
+                self.warning = "Some personal gestures could not be read. Teach them again."
+                continue
+            self.templates[action] = template
 
     def save(self, action: str, template: MotionTemplate):
-        self.templates[action] = template
-        self.path.parent.mkdir(parents=True, exist_ok=True)
-        self.path.write_text(
-            json.dumps({name: asdict(value) for name, value in self.templates.items()}, indent=2),
-            encoding="utf-8",
-        )
+        if action not in ("next", "previous"):
+            raise ValueError(f"Unknown gesture action: {action}")
+        templates = {**self.templates, action: template}
+        write_json(self.path, {name: asdict(value) for name, value in templates.items()})
+        self.templates = templates
+        self.warning = ""
 
 
 class MotionRecorder:

@@ -1,6 +1,8 @@
+import pytest
+
 from palmcue.controller import Action, Controller
 from palmcue.geometry import Observation, Point, Pose
-from palmcue.learned import GestureLibrary, LearnedMatcher, MotionRecorder
+from palmcue.learned import GestureLibrary, LearnedMatcher, MotionRecorder, MotionTemplate
 from palmcue.settings import Settings
 
 
@@ -38,7 +40,26 @@ def test_tiny_recording_and_opposite_motion_are_rejected(tmp_path):
 
     path = tmp_path / "motions.json"
     path.write_text("{broken", encoding="utf-8")
-    assert GestureLibrary(path).templates == {}
+    library = GestureLibrary(path)
+    assert library.templates == {}
+    assert library.warning
+
+
+def test_invalid_library_shape_and_templates_are_reported(tmp_path):
+    path = tmp_path / "motions.json"
+    path.write_text("[]", encoding="utf-8")
+    assert GestureLibrary(path).warning
+
+    path.write_text('{"next": {"center_x": NaN}}', encoding="utf-8")
+    library = GestureLibrary(path)
+    assert library.templates == {}
+    assert library.warning
+
+
+def test_unknown_action_is_rejected(tmp_path):
+    library = GestureLibrary(tmp_path / "motions.json")
+    with pytest.raises(ValueError, match="Unknown gesture action"):
+        library.save("click", MotionTemplate(1, 0, 1, 0, 0.5))
 
 
 def test_controller_fires_taught_action_without_an_unlock_pose(tmp_path):
